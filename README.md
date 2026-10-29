@@ -1,4 +1,4 @@
-<img src="icon.svg" alt="" width="96" align="right">
+![](icon.svg)
 
 # Jupyter Live: live Jupyter notebooks for Claude Code
 
@@ -28,8 +28,10 @@ What the plugin adds on top of the server:
   safe way, with your OK, to make bulk edits across many cells or notebooks
   and the few changes the MCP tools can't (cell tags, notebook metadata).
 
-Works on Linux and macOS (and WSL), on a laptop or a remote machine such as an
-HPC cluster node. The hooks and `jkernel` need `python3` on your PATH.
+Works on Linux and macOS, on a laptop or a remote machine such as an HPC
+cluster node. On Windows, use WSL with Claude Code running inside it; native
+Windows isn't supported. The hooks and `jkernel` need `python3` on your PATH.
+It is a Claude Code plugin: claude.ai chat and Cowork can't install it.
 
 ## Install
 
@@ -119,6 +121,31 @@ interactive Slurm job, and handles that without extra setup:
 - To reach JupyterLab from your laptop:
   `ssh -L <port>:localhost:<port> <node>`, then open the URL above.
 
+## What it runs, stores and sends
+
+- **Processes.** The first time Claude uses the notebook tools,
+  `scripts/mcp-wrapper` starts JupyterLab from the server env, listening on
+  `127.0.0.1` only, detached so it keeps running across Claude sessions until
+  you stop it or the machine (or Slurm job) ends. It then runs
+  `jupyter-mcp-server`, which talks to Claude Code over stdio. Kernels start
+  only when you or Claude start one; code in a notebook runs with your user's
+  permissions, like any notebook you run yourself.
+- **Files.** Everything goes in `~/.jupyter_mcp/`: `config`, `token` (mode
+  600), one log per host, a copy of the default kernel's spec in `share/`,
+  and the server env in `env/` if setup created it there. Notebooks are
+  written only under the notebook root, through Jupyter.
+- **Token.** Generated locally by setup and used only to authenticate to the
+  local JupyterLab.
+- **Network.** JupyterLab, the MCP server and `jkernel` only talk to each
+  other over `127.0.0.1`. There is no telemetry, and nothing is sent to any
+  other host. The one download is `jupyter-live-setup --create`, run by you
+  or by Claude with your OK, which installs the pinned packages from
+  conda-forge or PyPI (and uv may download a Python build).
+- **Hooks.** At session start, a hook tells Claude the notebook root, or that
+  setup is still to do and which env managers are installed. Before each
+  file tool call, a hook denies Read, Write, Edit and NotebookEdit on `.ipynb`
+  files under the notebook root, pointing Claude to the notebook tools.
+
 ## Notes
 
 - Kernels share the machine's memory. Stop the ones you no longer need.
@@ -139,3 +166,10 @@ interactive Slurm job, and handles that without extra setup:
 - To switch the notebook guard off entirely, set
   `JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1` in the `env` block of
   `~/.claude/settings.json`.
+
+## Not affiliated with Project Jupyter
+
+Jupyter Live is an independent, free plugin that uses Jupyter software
+(JupyterLab, and [jupyter-mcp-server](https://github.com/datalayer/jupyter-mcp-server)
+by Datalayer). It is not made, sponsored or endorsed by Project Jupyter.
+"Jupyter" is a trademark of LF Charities.

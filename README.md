@@ -3,7 +3,8 @@
 # Live Notebooks for Jupyter
 
 A Claude Code plugin that lets Claude work in your Jupyter notebooks the way
-you do, instead of editing `.ipynb` files as text. It wraps
+you do, with a running kernel, instead of only reading and editing the saved
+`.ipynb` file. It wraps
 [jupyter-mcp-server](https://github.com/datalayer/jupyter-mcp-server), so
 Claude can:
 

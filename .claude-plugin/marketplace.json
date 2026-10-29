@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "live-notebooks",
-      "description": "Lets Claude work in live Jupyter notebooks instead of editing .ipynb text: it runs cells, sees plots, keeps kernel state and uses any of your envs as a kernel. Starts a local JupyterLab on demand, on a laptop or a cluster node. Not affiliated with Project Jupyter.",
+      "description": "Lets Claude work in live Jupyter notebooks with a running kernel, not just the saved .ipynb file: it runs cells, sees plots, keeps kernel state and uses any of your envs as a kernel. Starts a local JupyterLab on demand, on a laptop or a cluster node. Not affiliated with Project Jupyter.",
       "source": "./",
       "category": "development"
     }

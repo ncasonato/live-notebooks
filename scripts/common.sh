@@ -32,16 +32,18 @@ load_config() {
 # Env managers that can build the server env; each prints nothing if absent.
 conda_exe() {
     if [[ -n ${CONDA_EXE:-} ]]; then echo "$CONDA_EXE"; return; fi
-    command -v mamba || command -v conda || true
+    type -P mamba || type -P conda || true
 }
 python_310() {
     local py
-    for py in python3.13 python3.12 python3.11 python3.10 python3; do
-        if command -v "$py" > /dev/null \
-            && "$py" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2> /dev/null; then
-            echo "$py"; return
-        fi
+    # Versioned names say their version; only bare python3 needs asking.
+    for py in python3.14 python3.13 python3.12 python3.11 python3.10; do
+        if type -P "$py" > /dev/null; then echo "$py"; return; fi
     done
+    if type -P python3 > /dev/null \
+        && python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2> /dev/null; then
+        echo python3
+    fi
 }
 
 # "PID ARGS" of the JupyterLab that start-jupyter runs for this user on port

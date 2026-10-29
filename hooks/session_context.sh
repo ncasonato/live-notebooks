@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SessionStart hook: stdout becomes context for Claude. Says where notebooks
 # live, or that setup is still to do and which env managers it can use.
-. "$(dirname "${BASH_SOURCE[0]}")/../scripts/common.sh"
+. "${CLAUDE_PLUGIN_ROOT}/scripts/common.sh"
 load_config
 if [[ -n ${JUPYTER_MCP_ENV:-} && -x $JUPYTER_MCP_ENV/bin/jupyter-mcp-server && -s $JUPYTER_MCP_TOKEN_FILE ]]; then
     echo "live-notebooks: Jupyter notebook paths in the jupyter MCP tools are relative to $JUPYTER_ROOT. Work on notebooks through those tools only (see the jupyter-notebooks skill)."
@@ -11,9 +11,10 @@ fi
 found=""
 conda=$(conda_exe)
 [[ -n $conda ]] && found+="  - conda: $conda (--with conda)"$'\n'
-command -v uv > /dev/null && found+="  - uv: $(command -v uv) (--with uv)"$'\n'
+uv=$(type -P uv)
+[[ -n $uv ]] && found+="  - uv: $uv (--with uv)"$'\n'
 py=$(python_310)
-[[ -n $py ]] && found+="  - venv from $(command -v "$py") (--with venv)"$'\n'
+[[ -n $py ]] && found+="  - venv from $(type -P "$py") (--with venv)"$'\n'
 
 cat <<EOF
 The live-notebooks plugin is installed but not set up, so its jupyter MCP server

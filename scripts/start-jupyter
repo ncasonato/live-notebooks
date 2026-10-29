@@ -19,14 +19,7 @@ cd "$JUPYTER_ROOT" || exit 1
 # a JUPYTER_PATH private to this server so other Jupyter installs are untouched.
 SHADOW="$JUPYTER_MCP_HOME/share/kernels/python3"
 mkdir -p "$SHADOW"
-"$E/bin/python" - "$JUPYTER_DEFAULT_KERNEL" "$SHADOW/kernel.json" <<'PY'
-import json, sys
-from jupyter_client.kernelspec import KernelSpecManager
-name, out = sys.argv[1], sys.argv[2]
-spec = KernelSpecManager().get_kernel_spec(name).to_dict()
-spec["display_name"] += " [default]"
-json.dump(spec, open(out, "w"), indent=1)
-PY
+"$E/bin/python" "$HERE/shadow_kernel.py" "$JUPYTER_DEFAULT_KERNEL" "$SHADOW/kernel.json"
 export JUPYTER_PATH="$JUPYTER_MCP_HOME/share${JUPYTER_PATH:+:$JUPYTER_PATH}"
 # Jupyter reads the token from the file itself, so it never appears on the
 # command line (visible to every user on the machine via ps).

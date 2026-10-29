@@ -23,19 +23,7 @@ LOG="$JUPYTER_MCP_HOME/$(hostname -s).log"
 
 # 0 = our server is up, 1 = nothing listening, 2 = port held by someone else.
 server_status() {
-    "$E/bin/python" - <<'PY'
-import os, sys, urllib.request, urllib.error
-req = urllib.request.Request(
-    os.environ["JUPYTER_URL"] + "/api/status",
-    headers={"Authorization": "token " + os.environ["JUPYTER_TOKEN"]},
-)
-try:
-    urllib.request.urlopen(req, timeout=3)
-except urllib.error.HTTPError:
-    sys.exit(2)
-except Exception:
-    sys.exit(1)
-PY
+    "$E/bin/python" "$HERE/server_status.py"
 }
 
 ours=$(our_server "$JUPYTER_PORT"); ours=${ours%% *}
@@ -62,18 +50,8 @@ elif (( status == 1 )); then
         mv -f "$LOG" "$LOG.old"
     fi
     echo "live-notebooks: starting Jupyter on $JUPYTER_URL (log: $LOG)" >&2
-    # Detach by double fork into a new session, in Python since macOS has no
-    # setsid command: the server is reparented to init, so it neither dies with
-    # this MCP session nor lingers as its zombie child once stopped.
-    "$E/bin/python" -c '
-import os, sys
-if os.fork() == 0:
-    os.setsid()
-    if os.fork() == 0:
-        os.execv(sys.argv[1], sys.argv[1:])
-    os._exit(0)
-os.wait()
-' "$HERE/start-jupyter" >> "$LOG" 2>&1 < /dev/null
+    # Detached, so the server outlives this MCP session (see detach.py).
+    "$E/bin/python" "$HERE/detach.py" "$HERE/start-jupyter" >> "$LOG" 2>&1 < /dev/null
     for _ in $(seq 1 60); do
         sleep 1
         status=0; server_status || status=$?

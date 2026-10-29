@@ -1,0 +1,10 @@
+{
+  "name": "jupyter-hpc",
+  "version": "0.1.0",
+  "description": "Jupyter notebooks through jupyter-mcp-server on Slurm compute nodes: per-node auto-started JupyterLab, one kernel per conda env, notebook guardrails.",
+  "author": {
+    "name": "ncasonato",
+    "email": "17475077+ncasonato@users.noreply.github.com"
+  },
+  "keywords": ["jupyter", "notebook", "mcp", "hpc", "slurm", "conda"]
+}

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Launch jupyter-mcp-server with the Jupyter token taken from a private file,
+# so it never appears in .mcp.json or on any process command line.
+#
+# If no Jupyter server of ours is running on this node, start one first
+# (start-jupyter, detached so it outlives this MCP process).
+# stdout is the MCP stdio channel: every diagnostic must go to stderr.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/common.sh"
+load_config
+require_setup
+E=$JUPYTER_MCP_ENV
+JUPYTER_TOKEN="$(< "$JUPYTER_MCP_TOKEN_FILE")"
+export JUPYTER_TOKEN
+# Overrides any JUPYTER_URL set elsewhere.
+export JUPYTER_URL="http://127.0.0.1:$JUPYTER_PORT"
+# Otherwise every MCP process starts (and then abandons) a kernel at launch.
+export START_NEW_CODE_SANDBOX=false
+# The nbmodel client's default 16 MB websocket limit makes larger notebooks
+# (e.g. with embedded images) silently load as empty.
+export WEBSOCKETS_MAX_BODY_SIZE=$((256 * 1024 * 1024))
+LOG="$JUPYTER_MCP_HOME/$(hostname -s).log"
+
+# 0 = our server is up, 1 = nothing listening, 2 = port held by someone else.
+server_status() {
+    "$E/bin/python" - <<'PY'
+import os, sys, urllib.request, urllib.error
+req = urllib.request.Request(
+    os.environ["JUPYTER_URL"] + "/api/status",
+    headers={"Authorization": "token " + os.environ["JUPYTER_TOKEN"]},
+)
+try:
+    urllib.request.urlopen(req, timeout=3)
+except urllib.error.HTTPError:
+    sys.exit(2)
+except Exception:
+    sys.exit(1)
+PY
+}
+
+status=0; server_status || status=$?
+if (( status == 2 )); then
+    echo "jupyter-hpc: port $JUPYTER_PORT is in use by another server; set JUPYTER_PORT" >&2
+    exit 1
+elif (( status == 1 )); then
+    mkdir -p "$JUPYTER_MCP_HOME"
+    echo "jupyter-hpc: starting Jupyter on $JUPYTER_URL (log: $LOG)" >&2
+    setsid nohup "$HERE/start-jupyter" >> "$LOG" 2>&1 < /dev/null &
+    for _ in $(seq 1 60); do
+        sleep 1
+        status=0; server_status || status=$?
+        (( status == 0 )) && break
+    done
+    if (( status != 0 )); then
+        echo "jupyter-hpc: Jupyter did not come up; see $LOG" >&2
+        exit 1
+    fi
+fi
+
+exec "$E/bin/jupyter-mcp-server" "$@"

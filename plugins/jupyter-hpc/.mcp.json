@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "jupyter": {
+      "type": "stdio",
+      "command": "${CLAUDE_PLUGIN_ROOT}/scripts/mcp-wrapper",
+      "args": [],
+      "env": {
+        "ALLOW_IMG_OUTPUT": "true"
+      }
+    }
+  }
+}

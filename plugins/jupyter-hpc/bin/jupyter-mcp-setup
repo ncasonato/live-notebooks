@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# One-time setup for the jupyter-hpc plugin: writes ~/.jupyter_mcp/config and
+# creates the private token. Safe to re-run; options not given keep their
+# current value.
+#
+#   jupyter-mcp-setup --env PREFIX [--create] [--root DIR] [--port N] [--default-kernel SPEC]
+#   jupyter-mcp-setup --show
+#
+#   --env PREFIX          conda env with jupyterlab + jupyter-mcp-server
+#   --create              create that env from the plugin's environment.yml
+#   --root DIR            JupyterLab root; notebook paths are relative to it
+#   --port N              default: 8000 + uid % 1000
+#   --default-kernel SPEC kernel MCP gets when it starts one itself (see `jkernel specs`)
+set -euo pipefail
+PLUGIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+. "$PLUGIN/scripts/common.sh"
+
+usage() { sed -n '2,13s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
+
+declare -A new=()
+create=false show=false
+while (( $# )); do
+    case $1 in
+        --env) new[JUPYTER_MCP_ENV]="$(readlink -m "$2")"; shift ;;
+        --root) new[JUPYTER_ROOT]="$(readlink -m "$2")"; shift ;;
+        --port) new[JUPYTER_PORT]="$2"; shift ;;
+        --default-kernel) new[JUPYTER_DEFAULT_KERNEL]="$2"; shift ;;
+        --create) create=true ;;
+        --show) show=true ;;
+        -h|--help) usage ;;
+        *) echo "unknown option: $1" >&2; usage 1 ;;
+    esac
+    shift
+done
+
+mkdir -p "$JUPYTER_MCP_HOME"
+chmod 700 "$JUPYTER_MCP_HOME"
+
+if ! $show; then
+    # Keep current values for keys not given on the command line.
+    declare -A conf=()
+    if [[ -f $JUPYTER_MCP_CONFIG ]]; then
+        while IFS='=' read -r k v; do
+            [[ $k =~ ^[A-Z_]+$ ]] && conf[$k]=$v
+        done < "$JUPYTER_MCP_CONFIG"
+    fi
+    for k in "${!new[@]}"; do conf[$k]=${new[$k]}; done
+
+    env_prefix=${conf[JUPYTER_MCP_ENV]:-}
+    if [[ -z $env_prefix ]]; then
+        echo "jupyter-mcp-setup: --env is required on first setup" >&2
+        usage 1
+    fi
+    if $create; then
+        conda=${CONDA_EXE:-$(command -v mamba || command -v conda || true)}
+        [[ -n $conda ]] || { echo "jupyter-mcp-setup: no conda/mamba on PATH" >&2; exit 1; }
+        "$conda" env create -y -p "$env_prefix" -f "$PLUGIN/environment.yml"
+    fi
+    if [[ ! -x $env_prefix/bin/jupyter-mcp-server || ! -x $env_prefix/bin/jupyter-lab ]]; then
+        echo "jupyter-mcp-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (use --create)" >&2
+        exit 1
+    fi
+
+    : > "$JUPYTER_MCP_CONFIG"
+    for k in $(printf '%s\n' "${!conf[@]}" | sort); do
+        echo "$k=${conf[$k]}" >> "$JUPYTER_MCP_CONFIG"
+    done
+
+    if [[ ! -s $JUPYTER_MCP_TOKEN_FILE ]]; then
+        # No trailing newline: Jupyter reads JUPYTER_TOKEN_FILE verbatim.
+        (umask 077; "$env_prefix/bin/python" -c 'import secrets; print(secrets.token_hex(32), end="")' \
+            > "$JUPYTER_MCP_TOKEN_FILE")
+        echo "created token $JUPYTER_MCP_TOKEN_FILE"
+    fi
+fi
+
+load_config
+echo "config $JUPYTER_MCP_CONFIG:"
+echo "  JUPYTER_MCP_ENV        ${JUPYTER_MCP_ENV:-(not set)}"
+echo "  JUPYTER_ROOT           $JUPYTER_ROOT"
+echo "  JUPYTER_PORT           $JUPYTER_PORT"
+echo "  JUPYTER_DEFAULT_KERNEL $JUPYTER_DEFAULT_KERNEL"
+$show || echo "Done. Reconnect the MCP server with /mcp (or restart Claude Code)."

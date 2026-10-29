@@ -1,0 +1,26 @@
+{
+  "description": "jupyter-hpc: keep notebook access on the MCP server, and tell Claude where notebooks live",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|MultiEdit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/guard_ipynb.py\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session_context.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

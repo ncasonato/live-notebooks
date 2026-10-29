@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ncasonato",
+  "description": "Claude Code plugins by ncasonato",
+  "owner": {
+    "name": "ncasonato",
+    "email": "17475077+ncasonato@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "jupyter-hpc",
+      "description": "Jupyter notebooks through jupyter-mcp-server on Slurm compute nodes: per-node auto-started JupyterLab, one kernel per conda env, notebook guardrails.",
+      "source": "./plugins/jupyter-hpc",
+      "category": "development"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# The env that runs JupyterLab and jupyter-mcp-server. Project envs are not
+# installed here: each one is a kernel (see the README).
+#   jupyter-mcp-setup --create --env <prefix>
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - jupyterlab=4.6.4
+  - jupyter-collaboration=5.0.4
+  - pip
+  - pip:
+      - jupyter-mcp-server==2.2.4

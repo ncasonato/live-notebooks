@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+"""Manage kernels on the Jupyter server used by jupyter-mcp-server.
+
+jupyter-mcp-server can't start a kernel by env name, only attach to a running
+one by id. Start the kernel here, then pass its id to `use_notebook`.
+
+    jkernel info               server URL, notebook root, env, status
+    jkernel specs              kernel specs (one per conda env)
+    jkernel list               running kernels, with memory use
+    jkernel start <spec>       start a kernel, print its id
+    jkernel stop <id>          shut a kernel down
+
+A kernel shows as "starting" until a client (MCP, JupyterLab) connects to it.
+"""
+import json
+import os
+import re
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+HOME = Path.home() / ".jupyter_mcp"
+
+
+def load_config():
+    # Same rules as scripts/common.sh: the file, overridden by env vars.
+    conf = {}
+    path = HOME / "config"
+    if path.exists():
+        for line in path.read_text().splitlines():
+            k, sep, v = line.partition("=")
+            if sep and re.fullmatch(r"[A-Z_]+", k):
+                conf[k] = v
+    conf.update({k: v for k, v in os.environ.items() if k.startswith("JUPYTER_") and v})
+    conf.setdefault("JUPYTER_ROOT", str(Path.home()))
+    conf.setdefault("JUPYTER_PORT", str(8000 + os.getuid() % 1000))
+    return conf
+
+
+CONF = load_config()
+URL = f"http://127.0.0.1:{CONF['JUPYTER_PORT']}/api"
+TOKEN_FILE = HOME / "token"
+
+
+def api(method, path, body=None):
+    req = urllib.request.Request(
+        URL + path,
+        method=method,
+        data=json.dumps(body).encode() if body is not None else None,
+        headers={
+            "Authorization": f"token {TOKEN_FILE.read_text().strip()}",
+            "Content-Type": "application/json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read() or "null")
+
+
+def rss_mb(kernel_id):
+    # The kernel's process has its id in the connection-file argument.
+    for proc in Path("/proc").iterdir():
+        try:
+            if kernel_id in (proc / "cmdline").read_text():
+                for line in (proc / "status").read_text().splitlines():
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1]) // 1024
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+def main(argv):
+    cmd = argv[1] if len(argv) > 1 else "list"
+    if cmd == "info":
+        print(f"url    {URL[:-4]}")
+        print(f"root   {CONF['JUPYTER_ROOT']}  (notebook paths are relative to this)")
+        print(f"env    {CONF.get('JUPYTER_MCP_ENV', '(not set: run jupyter-mcp-setup)')}")
+        try:
+            api("GET", "/status")
+            print("server running")
+        except (urllib.error.URLError, OSError):
+            print("server not running (starts with the MCP server)")
+    elif cmd == "specs":
+        specs = api("GET", "/kernelspecs")
+        for name, s in sorted(specs["kernelspecs"].items()):
+            mark = "*" if name == specs["default"] else " "
+            print(f"{mark} {name:20} {s['spec']['display_name']}")
+    elif cmd == "list":
+        sessions = {s["kernel"]["id"]: s["path"] for s in api("GET", "/sessions")}
+        for k in api("GET", "/kernels"):
+            mb = rss_mb(k["id"])
+            mem = f"{mb} MB" if mb is not None else "?"
+            print(f"{k['id']}  {k['name']:12} {k['execution_state']:8} {mem:>9}  {sessions.get(k['id'], '')}")
+    elif cmd == "start" and len(argv) == 3:
+        print(api("POST", "/kernels", {"name": argv[2]})["id"])
+    elif cmd == "stop" and len(argv) == 3:
+        api("DELETE", f"/kernels/{argv[2]}")
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    try:
+        main(sys.argv)
+    except FileNotFoundError:
+        sys.exit(f"jkernel: no token in {TOKEN_FILE}; run jupyter-mcp-setup")
+    except urllib.error.HTTPError as e:
+        sys.exit(f"jkernel: {e.code} {e.reason} ({e.url.split('/api', 1)[1]})")
+    except urllib.error.URLError as e:
+        sys.exit(f"jkernel: no Jupyter server at {URL} ({e.reason})")

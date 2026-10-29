@@ -25,8 +25,8 @@ What the plugin adds on top of the server:
 - **Guardrails**: for notebooks under the notebook root, a hook stops Claude
   from reading or editing `.ipynb` files as text, which would clobber the
   live notebook you have open. A skill teaches it the workflow, including a
-  safe way, with your OK, to do the few things the MCP tools can't (cell
-  tags, notebook metadata).
+  safe way, with your OK, to make bulk edits across many cells or notebooks
+  and the few changes the MCP tools can't (cell tags, notebook metadata).
 
 Works on Linux and macOS (and WSL), on a laptop or a remote machine such as an
 HPC cluster node. The hooks and `jkernel` need `python3` on your PATH.

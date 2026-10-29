@@ -29,19 +29,31 @@ and whether it is running.
   session start and by `jkernel info`), e.g. `project/analysis.ipynb`.
   Names starting with `.` are rejected.
 
-## When the MCP tools can't do it
+## Bulk edits, and what the MCP tools can't do
 
-The tools cover cell sources, outputs, order and execution. They can't change
-cell metadata or tags (e.g. Jupyter Book's `remove-input`, `hide-cell`),
-notebook metadata (kernelspec, title), an existing cell's type (delete and
-re-insert instead) or attachments. For those:
+The tools work one cell at a time (`edit_cell_source` is a find-and-replace
+within a single cell). That is the right route for a handful of cells. Use
+the file route below instead when:
 
-1. Tell the user what can't be done through MCP and ask before going on.
-2. `unuse_notebook`, and confirm with the user that the notebook isn't open in
-   JupyterLab or an editor, so no live copy can overwrite the change.
-3. Edit the file with `nbformat` from Bash (it validates the result), using
-   the server env's Python (`jkernel info` shows the env).
-4. `use_notebook` again and check the result with `read_notebook`.
+- the change spans many cells or several notebooks (a rename across a
+  notebook, the same first cell added to every notebook, renumbering
+  sections), where cell-by-cell calls would be slow and error-prone;
+- the tools can't do it at all: cell metadata or tags (e.g. Jupyter Book's
+  `remove-input`, `hide-cell`), notebook metadata (kernelspec, title), an
+  existing cell's type (or delete and re-insert it) and attachments.
+
+File route:
+
+1. Tell the user what you're about to change and why it isn't going through
+   MCP, and ask before going on.
+2. `unuse_notebook` for each notebook involved, and confirm with the user
+   that none is open in JupyterLab or an editor, so no live copy with unsaved
+   edits can overwrite the change.
+3. Edit the files with one `nbformat` script from Bash (it validates the
+   result), using the server env's Python (`jkernel info` shows the env).
+   Print what changed per notebook.
+4. `use_notebook` again and check the result with `read_notebook`; the
+   server picks up the changed files.
 
 ## Choose the env by kernel
 

@@ -50,8 +50,9 @@ reason = (
     "notebooks are live collaborative documents, so read, create, edit and run "
     "them with the jupyter MCP tools (use_notebook, read_notebook, read_cell, "
     "insert_cell, edit_cell_source, ...); paths there are relative to "
-    f"{root}. If the MCP tools can't do what is needed (e.g. cell metadata or "
-    "tags, notebook metadata), explain that to the user and, with their OK: "
+    f"{root}. For bulk edits across many cells or notebooks, or what the MCP "
+    "tools can't do (e.g. cell metadata or tags, notebook metadata), explain "
+    "that to the user and, with their OK: "
     "unuse_notebook, make sure the notebook isn't open in JupyterLab or an "
     "editor, edit it with nbformat from Bash, then reopen it."
 )

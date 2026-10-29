@@ -1,7 +1,7 @@
 {
   "name": "live-notebooks",
   "displayName": "Live Notebooks for Jupyter",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Lets Claude work in live Jupyter notebooks instead of editing .ipynb text: it runs cells, sees plots, keeps kernel state and uses any of your envs as a kernel. Starts a local JupyterLab on demand, on a laptop or a cluster node. Not affiliated with Project Jupyter.",
   "author": {
     "name": "ncasonato",
@@ -16,6 +16,6 @@
     "hpc"
   ],
   "license": "MIT",
-  "repository": "https://github.com/ncasonato/claude-jupyter-mcp",
+  "repository": "https://github.com/ncasonato/live-notebooks",
   "icon": ".claude-plugin/icon.png"
 }

@@ -35,14 +35,31 @@ It is a Claude Code plugin: claude.ai chat and Cowork can't install it.
 
 ## Install
 
-In Claude Code:
+In a terminal:
 
 ```
-/plugin marketplace add ncasonato/claude-jupyter-mcp
-/plugin install live-notebooks@ncasonato
+claude plugin marketplace add ncasonato/live-notebooks
+claude plugin install live-notebooks@ncasonato
 ```
 
-`/plugin marketplace update ncasonato` picks up new versions.
+then restart Claude Code. In the terminal version of Claude Code you can
+use `/plugin marketplace add …` and `/plugin install …` instead; the VS Code
+extension has no `/plugin` command.
+
+To update:
+
+```
+claude plugin marketplace update ncasonato
+claude plugin update live-notebooks@ncasonato
+```
+
+then restart Claude Code or run `/reload-plugins`.
+
+If you installed it under its earlier names (`jupyter-hpc` or
+`jupyter-live`), the marketplace update moves your settings to
+`live-notebooks`. If the plugin then shows as not installed, run
+`claude plugin install live-notebooks@ncasonato`; your setup in
+`~/.jupyter_mcp` is kept.
 
 ## Set up (once)
 

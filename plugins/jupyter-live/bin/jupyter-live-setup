@@ -3,13 +3,15 @@
 # creates the private token. Safe to re-run; options not given keep their
 # current value.
 #
-#   jupyter-live-setup --env PREFIX [--create] [--root DIR] [--port N] [--default-kernel SPEC]
-#                     [--max-notebook-mb N]
+#   jupyter-live-setup --create [--with conda|uv|venv] [--env PREFIX] [--root DIR] [options]
+#   jupyter-live-setup --env PREFIX [--root DIR] [options]
 #   jupyter-live-setup --show
 #
-#   --env PREFIX          Python env (conda or venv) with jupyterlab + jupyter-mcp-server
-#   --create              create that env with conda from the plugin's environment.yml
-#   --root DIR            JupyterLab root; notebook paths are relative to it
+#   --create              create the server env
+#   --with MANAGER        conda, uv, or venv (python3 >= 3.10); default: the first found
+#   --env PREFIX          the server env: runs JupyterLab + jupyter-mcp-server, not your
+#                         analysis (that runs in kernels). Default with --create: ~/.jupyter_mcp/env
+#   --root DIR            JupyterLab root; notebook paths are relative to it (default: $HOME)
 #   --port N              default: 8000 + uid % 1000
 #   --default-kernel SPEC kernel MCP gets when it starts one itself (see `jkernel specs`)
 #   --max-notebook-mb N   largest notebook the MCP client can load (default: 256)
@@ -18,14 +20,53 @@ set -euo pipefail
 PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 . "$PLUGIN/scripts/common.sh"
 
-usage() { sed -n '2,15s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
+usage() { sed -n '2,17s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
 abspath() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
+die() { echo "jupyter-live-setup: $*" >&2; exit 1; }
+
+# Build the server env at $1 with manager $2 (conda, uv or venv), or with the
+# first one found: conda/mamba (environment.yml), uv (fetches a Python if
+# needed), a venv from python3 >= 3.10 (requirements.txt).
+create_env() {
+    local prefix=$1 manager=$2 conda py
+    conda=$(conda_exe)
+    py=$(python_310)
+    if [[ -z $manager ]]; then
+        if [[ -n $conda ]]; then manager=conda
+        elif command -v uv > /dev/null; then manager=uv
+        elif [[ -n $py ]]; then manager=venv
+        else
+            die "--create needs conda/mamba, uv, or Python >= 3.10" \
+                "(e.g. brew install uv, or https://docs.astral.sh/uv/)"
+        fi
+    fi
+    case $manager in
+        conda)
+            [[ -n $conda ]] || die "no conda/mamba found"
+            echo "creating $prefix with $conda"
+            "$conda" env create -y -p "$prefix" -f "$PLUGIN/environment.yml" ;;
+        uv)
+            command -v uv > /dev/null || die "no uv found"
+            echo "creating $prefix with uv"
+            uv venv --python 3.12 "$prefix"
+            uv pip install --python "$prefix/bin/python" -r "$PLUGIN/requirements.txt" ;;
+        venv)
+            [[ -n $py ]] || die "no Python >= 3.10 found"
+            echo "creating $prefix with $(command -v "$py") -m venv"
+            "$py" -m venv "$prefix"
+            "$prefix/bin/python" -m pip install -q --upgrade pip
+            "$prefix/bin/python" -m pip install -r "$PLUGIN/requirements.txt" ;;
+    esac
+}
 
 # Settings given on the command line, as KEY=VALUE lines.
 new=""
-create=false show=false
+create=false show=false manager=""
 while (( $# )); do
     case $1 in
+        --with)
+            case $2 in conda|uv|venv) manager=$2 ;; *) die "--with takes conda, uv or venv" ;; esac
+            shift ;;
         --env) new+="JUPYTER_MCP_ENV=$(abspath "$2")"$'\n'; shift ;;
         --root) new+="JUPYTER_ROOT=$(abspath "$2")"$'\n'; shift ;;
         --port) new+="JUPYTER_PORT=$2"$'\n'; shift ;;
@@ -50,14 +91,18 @@ if ! $show; then
         | grep -E '^[A-Z_]+=' | awk -F= '{ v[$1] = $0 } END { for (k in v) print v[k] }' | sort || true)"
 
     env_prefix="$(printf '%s\n' "$merged" | sed -n 's/^JUPYTER_MCP_ENV=//p')"
+    if [[ -z $env_prefix ]] && $create; then
+        env_prefix="$JUPYTER_MCP_HOME/env"
+        merged="$(printf '%s\nJUPYTER_MCP_ENV=%s' "$merged" "$env_prefix" | grep -E '^[A-Z_]+=' | sort)"
+    fi
     if [[ -z $env_prefix ]]; then
-        echo "jupyter-live-setup: --env is required on first setup" >&2
+        echo "jupyter-live-setup: give --create, or --env with an existing server env" >&2
         usage 1
     fi
     if $create; then
-        conda=${CONDA_EXE:-$(command -v mamba || command -v conda || true)}
-        [[ -n $conda ]] || { echo "jupyter-live-setup: no conda/mamba on PATH" >&2; exit 1; }
-        "$conda" env create -y -p "$env_prefix" -f "$PLUGIN/environment.yml"
+        create_env "$env_prefix" "$manager"
+    elif [[ -n $manager ]]; then
+        die "--with only applies with --create"
     fi
     if [[ ! -x $env_prefix/bin/jupyter-mcp-server || ! -x $env_prefix/bin/jupyter-lab ]]; then
         echo "jupyter-live-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2

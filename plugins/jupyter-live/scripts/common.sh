@@ -29,6 +29,21 @@ load_config() {
     export WEBSOCKETS_MAX_BODY_SIZE="${WEBSOCKETS_MAX_BODY_SIZE:-$((256 * 1024 * 1024))}"
 }
 
+# Env managers that can build the server env; each prints nothing if absent.
+conda_exe() {
+    if [[ -n ${CONDA_EXE:-} ]]; then echo "$CONDA_EXE"; return; fi
+    command -v mamba || command -v conda || true
+}
+python_310() {
+    local py
+    for py in python3.13 python3.12 python3.11 python3.10 python3; do
+        if command -v "$py" > /dev/null \
+            && "$py" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2> /dev/null; then
+            echo "$py"; return
+        fi
+    done
+}
+
 # Exit with a pointer to setup unless config, env and token are all in place.
 require_setup() {
     local why=""

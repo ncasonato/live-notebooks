@@ -42,27 +42,31 @@ In Claude Code:
 
 ## Set up (once)
 
-You need a Python env (3.10 or newer) that runs JupyterLab and the MCP
-server. This is not one of your project envs; those become kernels.
-
-With conda, setup can create it:
+The easiest way is to ask Claude to set it up. Or run, inside Claude Code:
 
 ```
-! jupyter-live-setup --create --env ~/miniforge3/envs/jupyter-live --root ~/projects
+! jupyter-live-setup --create --root ~/projects
 ```
 
-With a venv, create it yourself, then point setup at it:
+then `/mcp` to reconnect the `jupyter` server. `--root` is the directory
+JupyterLab serves; notebooks must be under it.
 
-```
-python3 -m venv ~/.venvs/jupyter-live
-~/.venvs/jupyter-live/bin/pip install jupyterlab==4.6.4 jupyter-collaboration==5.0.4 jupyter-mcp-server==2.2.4
-! jupyter-live-setup --env ~/.venvs/jupyter-live --root ~/projects
-```
+`--create` builds a small server env that runs JupyterLab and the MCP
+server, in `~/.jupyter_mcp/env` (`--env PATH` to put it elsewhere). This is
+not one of your project envs; those become kernels. Pick how it is built with
+`--with`:
 
-Any existing env with `jupyterlab`, `jupyter-collaboration` and
-`jupyter-mcp-server` works too (see `environment.yml`). `--root` is the
-directory JupyterLab serves; notebooks must be under it. Then run `/mcp` to
-reconnect the `jupyter` server. You can also just ask Claude to set it up.
+- `--with conda`: conda/mamba, from `environment.yml`;
+- `--with uv`: [uv](https://docs.astral.sh/uv/), which downloads Python
+  itself if needed;
+- `--with venv`: a venv from Python 3.10 or newer, from `requirements.txt`.
+
+Without `--with`, setup uses the first of these it finds. When Claude sets it
+up, it asks which you prefer if more than one is installed. On a Mac with none
+of them, `brew install uv` is enough.
+
+To use an existing env instead, leave out `--create` and pass `--env PATH`:
+it needs `jupyterlab`, `jupyter-collaboration` and `jupyter-mcp-server`.
 
 `jupyter-live-setup --show` prints the current settings. They are stored in
 `~/.jupyter_mcp/config` and can be overridden by environment variables of

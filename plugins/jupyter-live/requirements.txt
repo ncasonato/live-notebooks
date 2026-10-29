@@ -1,0 +1,4 @@
+# The server env for venv/uv installs; keep in step with environment.yml.
+jupyterlab==4.6.4
+jupyter-collaboration==5.0.4
+jupyter-mcp-server==2.2.4

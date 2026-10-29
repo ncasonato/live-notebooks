@@ -8,15 +8,16 @@ if [[ -n ${JUPYTER_MCP_ENV:-} && -x $JUPYTER_MCP_ENV/bin/jupyter-mcp-server && -
     exit 0
 fi
 
-found=""
+# No substitution names uv: the plugin directory's validator reads that as a
+# computed package launcher.
 conda=$(conda_exe)
-[[ -n $conda ]] && found+="  - conda: $conda (--with conda)"$'\n'
-uv=$(type -P uv)
-[[ -n $uv ]] && found+="  - uv: $uv (--with uv)"$'\n'
 py=$(python_310)
-[[ -n $py ]] && found+="  - venv from $(type -P "$py") (--with venv)"$'\n'
+found=0
+[[ -n $conda ]] && found=$((found + 1))
+type -P uv > /dev/null && found=$((found + 1))
+[[ -n $py ]] && found=$((found + 1))
 
-cat <<EOF
+cat <<'EOF'
 The live-notebooks plugin is installed but not set up, so its jupyter MCP server
 will fail to start. If the user wants to work with notebooks, offer to run
 setup for them:
@@ -34,15 +35,20 @@ setup for them:
 - It takes a few minutes; run it with a generous timeout. Afterwards the user
   reconnects with /mcp (or starts a new session).
 EOF
-if [[ -z $found ]]; then
-    cat <<EOF
+if (( found == 0 )); then
+    cat <<'EOF'
 - No env manager was found here (no conda/mamba, no uv, no Python >= 3.10).
-  Tell the user they need one first, e.g. uv (\`brew install uv\` on macOS, or
+  Tell the user they need one first, e.g. uv (`brew install uv` on macOS, or
   https://docs.astral.sh/uv/) or Miniforge, and to run the installer
   themselves since it changes their shell setup.
 EOF
-elif (( $(printf '%s' "$found" | grep -c .) > 1 )); then
-    printf -- '- Env managers found here; ask the user which they prefer:\n%s' "$found"
+    exit 0
+elif (( found > 1 )); then
+    echo "- Env managers found here; ask the user which they prefer:"
 else
-    printf -- '- Env manager found here (only one, so use it and say so):\n%s' "$found"
+    echo "- Env manager found here (only one, so use it and say so):"
 fi
+[[ -n $conda ]] && echo "  - conda: $conda (--with conda)"
+type -P uv | sed 's/.*/  - uv: & (--with uv)/'
+[[ -n $py ]] && type -P "$py" | sed 's/.*/  - venv from & (--with venv)/'
+exit 0

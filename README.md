@@ -1,6 +1,6 @@
 <img src="icon.svg" alt="" width="96" align="right">
 
-# jupyter-live: live Jupyter notebooks for Claude Code
+# Jupyter Live: live Jupyter notebooks for Claude Code
 
 A Claude Code plugin that lets Claude work in your Jupyter notebooks the way
 you do, instead of editing `.ipynb` files as text. It wraps

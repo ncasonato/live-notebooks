@@ -1,6 +1,6 @@
 # The env that runs JupyterLab and jupyter-mcp-server. Project envs are not
 # installed here: each one is a kernel (see the README).
-#   jupyter-mcp-setup --create --env <prefix>
+#   jupyter-live-setup --create --env <prefix>
 channels:
   - conda-forge
 dependencies:

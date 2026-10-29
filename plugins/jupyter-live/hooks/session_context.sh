@@ -7,7 +7,7 @@ if [[ -z ${JUPYTER_MCP_ENV:-} || ! -x $JUPYTER_MCP_ENV/bin/jupyter-mcp-server ||
     cat <<EOF
 The jupyter-live plugin is installed but not set up, so its jupyter MCP server
 will fail to start. If the user wants to work with notebooks, offer to run
-\`jupyter-mcp-setup --env <env prefix> [--create] --root <notebook root>\`
+\`jupyter-live-setup --env <env prefix> [--create] --root <notebook root>\`
 (ask them for both paths; --create builds a conda env, see the plugin README
 for venv), then have them reconnect with /mcp.
 EOF

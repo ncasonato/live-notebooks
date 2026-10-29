@@ -48,7 +48,7 @@ def api(method, path, body=None):
     try:
         token = TOKEN_FILE.read_text().strip()
     except FileNotFoundError:
-        sys.exit(f"jkernel: no token in {TOKEN_FILE}; run jupyter-mcp-setup")
+        sys.exit(f"jkernel: no token in {TOKEN_FILE}; run jupyter-live-setup")
     req = urllib.request.Request(
         URL + path,
         method=method,
@@ -85,7 +85,7 @@ def main(argv):
     if cmd == "info":
         print(f"url    {URL[:-4]}")
         print(f"root   {CONF['JUPYTER_ROOT']}  (notebook paths are relative to this)")
-        print(f"env    {CONF.get('JUPYTER_MCP_ENV', '(not set: run jupyter-mcp-setup)')}")
+        print(f"env    {CONF.get('JUPYTER_MCP_ENV', '(not set: run jupyter-live-setup)')}")
         try:
             api("GET", "/status")
             print("server running")

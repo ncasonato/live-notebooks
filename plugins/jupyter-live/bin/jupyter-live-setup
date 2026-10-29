@@ -3,9 +3,9 @@
 # creates the private token. Safe to re-run; options not given keep their
 # current value.
 #
-#   jupyter-mcp-setup --env PREFIX [--create] [--root DIR] [--port N] [--default-kernel SPEC]
+#   jupyter-live-setup --env PREFIX [--create] [--root DIR] [--port N] [--default-kernel SPEC]
 #                     [--max-notebook-mb N]
-#   jupyter-mcp-setup --show
+#   jupyter-live-setup --show
 #
 #   --env PREFIX          Python env (conda or venv) with jupyterlab + jupyter-mcp-server
 #   --create              create that env with conda from the plugin's environment.yml
@@ -51,16 +51,16 @@ if ! $show; then
 
     env_prefix="$(printf '%s\n' "$merged" | sed -n 's/^JUPYTER_MCP_ENV=//p')"
     if [[ -z $env_prefix ]]; then
-        echo "jupyter-mcp-setup: --env is required on first setup" >&2
+        echo "jupyter-live-setup: --env is required on first setup" >&2
         usage 1
     fi
     if $create; then
         conda=${CONDA_EXE:-$(command -v mamba || command -v conda || true)}
-        [[ -n $conda ]] || { echo "jupyter-mcp-setup: no conda/mamba on PATH" >&2; exit 1; }
+        [[ -n $conda ]] || { echo "jupyter-live-setup: no conda/mamba on PATH" >&2; exit 1; }
         "$conda" env create -y -p "$env_prefix" -f "$PLUGIN/environment.yml"
     fi
     if [[ ! -x $env_prefix/bin/jupyter-mcp-server || ! -x $env_prefix/bin/jupyter-lab ]]; then
-        echo "jupyter-mcp-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2
+        echo "jupyter-live-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2
         exit 1
     fi
 

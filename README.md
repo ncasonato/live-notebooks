@@ -48,7 +48,7 @@ server. This is not one of your project envs; those become kernels.
 With conda, setup can create it:
 
 ```
-! jupyter-mcp-setup --create --env ~/miniforge3/envs/jupyter-live --root ~/projects
+! jupyter-live-setup --create --env ~/miniforge3/envs/jupyter-live --root ~/projects
 ```
 
 With a venv, create it yourself, then point setup at it:
@@ -56,7 +56,7 @@ With a venv, create it yourself, then point setup at it:
 ```
 python3 -m venv ~/.venvs/jupyter-live
 ~/.venvs/jupyter-live/bin/pip install jupyterlab==4.6.4 jupyter-collaboration==5.0.4 jupyter-mcp-server==2.2.4
-! jupyter-mcp-setup --env ~/.venvs/jupyter-live --root ~/projects
+! jupyter-live-setup --env ~/.venvs/jupyter-live --root ~/projects
 ```
 
 Any existing env with `jupyterlab`, `jupyter-collaboration` and
@@ -64,7 +64,7 @@ Any existing env with `jupyterlab`, `jupyter-collaboration` and
 directory JupyterLab serves; notebooks must be under it. Then run `/mcp` to
 reconnect the `jupyter` server. You can also just ask Claude to set it up.
 
-`jupyter-mcp-setup --show` prints the current settings. They are stored in
+`jupyter-live-setup --show` prints the current settings. They are stored in
 `~/.jupyter_mcp/config` and can be overridden by environment variables of
 the same name: `JUPYTER_MCP_ENV`, `JUPYTER_ROOT`, `JUPYTER_PORT` (default
 8000 + uid % 1000), `JUPYTER_DEFAULT_KERNEL` and `WEBSOCKETS_MAX_BODY_SIZE`
@@ -124,7 +124,7 @@ interactive Slurm job, and handles that without extra setup:
   notebook over the limit (e.g. with many embedded plots) silently opens as
   empty. Later releases raise an error instead
   ([datalayer/jupyter-nbmodel-client#67](https://github.com/datalayer/jupyter-nbmodel-client/pull/67)).
-  For bigger notebooks, raise it with `jupyter-mcp-setup --max-notebook-mb N`
+  For bigger notebooks, raise it with `jupyter-live-setup --max-notebook-mb N`
   and reconnect with `/mcp`.
 - To let Claude edit a `.ipynb` directly anyway, set
   `JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1` in the `env` block of

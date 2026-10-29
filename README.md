@@ -82,6 +82,11 @@ To open the same JupyterLab in your browser:
 - Cells run on the server, so long computations continue after you close
   Claude Code. The server itself ends with your job.
 - The server log is `~/.jupyter_mcp/<node>.log`.
+- The MCP client's websocket message limit is raised from 16 MB to 256 MB
+  (`WEBSOCKETS_MAX_BODY_SIZE`): in jupyter-nbmodel-client up to 1.5.1, a
+  notebook over the limit (e.g. with many embedded plots) silently opens as
+  empty. Later releases raise an error instead
+  ([datalayer/jupyter-nbmodel-client#67](https://github.com/datalayer/jupyter-nbmodel-client/pull/67)).
 - To let Claude edit a `.ipynb` directly anyway, set
   `JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1` in the `env` block of
   `~/.claude/settings.json`.

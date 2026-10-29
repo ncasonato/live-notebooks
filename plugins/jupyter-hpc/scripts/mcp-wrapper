@@ -18,7 +18,9 @@ export JUPYTER_URL="http://127.0.0.1:$JUPYTER_PORT"
 # Otherwise every MCP process starts (and then abandons) a kernel at launch.
 export START_NEW_CODE_SANDBOX=false
 # The nbmodel client's default 16 MB websocket limit makes larger notebooks
-# (e.g. with embedded images) silently load as empty.
+# (e.g. with embedded images) silently load as empty. Releases after
+# jupyter-nbmodel-client 1.5.1 raise an error instead
+# (datalayer/jupyter-nbmodel-client#67); the limit still needs raising.
 export WEBSOCKETS_MAX_BODY_SIZE=$((256 * 1024 * 1024))
 LOG="$JUPYTER_MCP_HOME/$(hostname -s).log"
 

@@ -44,6 +44,16 @@ python_310() {
     done
 }
 
+# Native Windows (Git Bash, MSYS, Cygwin) lacks what the scripts rely on, from
+# POSIX sessions to bin/ env layouts; WSL is Linux and works.
+require_unix() {
+    case "$(uname -s)" in
+        MINGW* | MSYS* | CYGWIN*)
+            echo "live-notebooks: native Windows isn't supported; run Claude Code inside WSL" >&2
+            exit 1 ;;
+    esac
+}
+
 # Exit with a pointer to setup unless config, env and token are all in place.
 require_setup() {
     local why=""

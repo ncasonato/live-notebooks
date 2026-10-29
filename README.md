@@ -66,14 +66,16 @@ If you installed it under its earlier names (`jupyter-hpc` or
 
 ## Set up (once)
 
-The easiest way is to ask Claude to set it up. Or run, inside Claude Code:
+Ask Claude to set it up, e.g. "set up live-notebooks for my notebooks in
+~/projects". It runs `live-notebooks-setup --create --root ~/projects`,
+asking you first which env manager to use if you have several. Then
+reconnect the `jupyter` server with `/mcp`, or restart Claude Code.
+`--root` is the directory JupyterLab serves; notebooks must be under it.
 
-```
-! live-notebooks-setup --create --root ~/projects
-```
-
-then `/mcp` to reconnect the `jupyter` server. `--root` is the directory
-JupyterLab serves; notebooks must be under it.
+The plugin's commands (`live-notebooks-setup`, `jkernel`) are on PATH only
+inside Claude Code. To use them in your own terminal too, ask Claude to run
+`live-notebooks-setup --link`: it puts launchers in `~/.local/bin` that
+always run the installed version.
 
 `--create` builds a small server env that runs JupyterLab and the MCP
 server, in `~/.jupyter_mcp/env` (`--env PATH` to put it elsewhere). This is
@@ -113,8 +115,8 @@ the kernel Claude gets when it does not pick one.
 ## Use
 
 Just ask Claude to work in a notebook, e.g. "open `project/analysis.ipynb`
-with the `scanpy` kernel and plot the UMAP". Claude can run `jkernel` itself,
-and inside Claude Code you can run it with a leading `!`:
+with the `scanpy` kernel and plot the UMAP". Claude runs `jkernel` itself;
+you can too, in your terminal after `live-notebooks-setup --link`:
 
 | Command | |
 |---|---|
@@ -151,8 +153,10 @@ interactive Slurm job, and handles that without extra setup:
   only when you or Claude start one; code in a notebook runs with your user's
   permissions, like any notebook you run yourself.
 - **Files.** Everything goes in `~/.jupyter_mcp/`: `config`, `token` (mode
-  600), one log per host, a copy of the default kernel's spec in `share/`,
-  and the server env in `env/` if setup created it there. Notebooks are
+  600), one log per host (warnings only, restarted past 5 MB), a copy of the
+  default kernel's spec in `share/`, and the server env in `env/` if setup
+  created it there. `live-notebooks-setup --link` also writes two small
+  launchers to `~/.local/bin` (or the folder you give). Notebooks are
   written only under the notebook root, through Jupyter.
 - **Token.** Generated locally by setup and used only to authenticate to the
   local JupyterLab.
@@ -171,7 +175,9 @@ interactive Slurm job, and handles that without extra setup:
 - Kernels share the machine's memory. Stop the ones you no longer need.
 - Cells run on the server, so long computations continue after you close
   Claude Code.
-- The server log is `~/.jupyter_mcp/<host>.log`.
+- The server log is `~/.jupyter_mcp/<host>.log`. It records warnings and
+  errors only; past 5 MB it is moved to `<host>.log.old` when the server next
+  starts.
 - The MCP client's websocket message limit is raised from 16 MB to 256 MB
   (`WEBSOCKETS_MAX_BODY_SIZE`): in jupyter-nbmodel-client up to 1.5.1, a
   notebook over the limit (e.g. with many embedded plots) silently opens as

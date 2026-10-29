@@ -8,6 +8,7 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/common.sh"
+require_unix
 load_config
 require_setup
 E=$JUPYTER_MCP_ENV
@@ -39,10 +40,22 @@ PY
 
 status=0; server_status || status=$?
 if (( status == 2 )); then
-    echo "live-notebooks: port $JUPYTER_PORT is in use by another server; set JUPYTER_PORT" >&2
+    # Our own JupyterLab answers 403 too once the token file has changed.
+    ours=$(ps -u "$(id -u)" -o pid=,args= | grep "[j]upyter-lab .*--port $JUPYTER_PORT " | awk '{print $1}' | head -1 || true)
+    if [[ -n $ours ]]; then
+        echo "live-notebooks: your Jupyter server on port $JUPYTER_PORT (PID $ours) rejects" \
+            "the token in $JUPYTER_MCP_TOKEN_FILE, which changed after it started;" \
+            "stop it (kill $ours) and reconnect with /mcp" >&2
+    else
+        echo "live-notebooks: port $JUPYTER_PORT is in use by another server; set JUPYTER_PORT" >&2
+    fi
     exit 1
 elif (( status == 1 )); then
     mkdir -p "$JUPYTER_MCP_HOME"
+    # Keep one previous log; JupyterLab's own logging is cut to warnings.
+    if [[ -f $LOG ]] && (( $(wc -c < "$LOG") > 5 * 1024 * 1024 )); then
+        mv -f "$LOG" "$LOG.old"
+    fi
     echo "live-notebooks: starting Jupyter on $JUPYTER_URL (log: $LOG)" >&2
     # New session via Python's os.setsid: macOS has no setsid command.
     nohup "$E/bin/python" -c 'import os, sys; os.setsid(); os.execv(sys.argv[1], sys.argv[1:])' \

@@ -6,7 +6,10 @@
 #   live-notebooks-setup --create [--with conda|uv|venv] [--env PREFIX] [--root DIR] [options]
 #   live-notebooks-setup --env PREFIX [--root DIR] [options]
 #   live-notebooks-setup --show
+#   live-notebooks-setup --link [DIR]
 #
+#   --link [DIR]          put launchers for jkernel and live-notebooks-setup in DIR (default
+#                         ~/.local/bin), so they work outside Claude Code too
 #   --create              create the server env
 #   --with MANAGER        conda, uv, or venv (python3 >= 3.10); default: the first found
 #   --env PREFIX          the server env: runs JupyterLab + jupyter-mcp-server, not your
@@ -19,10 +22,55 @@ set -euo pipefail
 # Plain bash 3.2 (macOS): no associative arrays, no GNU readlink.
 PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 . "$PLUGIN/scripts/common.sh"
+require_unix
 
-usage() { sed -n '2,17s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
+usage() { sed -n '2,20s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
 abspath() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
 die() { echo "live-notebooks-setup: $*" >&2; exit 1; }
+
+# Write launchers into $1 that run the commands from whichever plugin version
+# Claude Code has installed: its bin/ is on PATH only inside Claude Code, and
+# its path changes with every update.
+LAUNCHER_MARK="# live-notebooks launcher"
+link_commands() {
+    local dir=$1 name target
+    mkdir -p "$dir"
+    for name in jkernel live-notebooks-setup; do
+        target="$dir/$name"
+        if [[ -e $target ]] && ! grep -q "^$LAUNCHER_MARK" "$target"; then
+            die "$target exists and isn't a live-notebooks launcher; not replacing it"
+        fi
+        cat > "$target" <<EOF
+#!/usr/bin/env bash
+$LAUNCHER_MARK (written by live-notebooks-setup --link): runs $name
+# from the live-notebooks plugin version that Claude Code has installed.
+root=\$(python3 - <<'PY'
+import json, os
+path = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~/.claude"),
+                    "plugins", "installed_plugins.json")
+try:
+    for key, installs in json.load(open(path))["plugins"].items():
+        if key.startswith("live-notebooks@") and installs:
+            print(installs[0]["installPath"])
+            break
+except (OSError, ValueError, KeyError):
+    pass
+PY
+)
+if [[ -z \$root || ! -x \$root/bin/$name ]]; then
+    echo "$name: the live-notebooks plugin isn't installed in Claude Code" >&2
+    exit 1
+fi
+exec "\$root/bin/$name" "\$@"
+EOF
+        chmod +x "$target"
+        echo "linked $target"
+    done
+    case ":$PATH:" in
+        *":$dir:"*) ;;
+        *) echo "note: $dir isn't on your PATH; add it in your shell's startup file" ;;
+    esac
+}
 
 # Build the server env at $1 with manager $2 (conda, uv or venv), or with the
 # first one found: conda/mamba (environment.yml), uv (fetches a Python if
@@ -74,6 +122,11 @@ while (( $# )); do
         --max-notebook-mb)
             [[ $2 =~ ^[1-9][0-9]*$ ]] || { echo "--max-notebook-mb needs a whole number" >&2; exit 1; }
             new+="WEBSOCKETS_MAX_BODY_SIZE=$(( $2 * 1024 * 1024 ))"$'\n'; shift ;;
+        --link)
+            dir="$HOME/.local/bin"
+            if [[ ${2:-} && $2 != --* ]]; then dir=$(abspath "$2"); fi
+            link_commands "$dir"
+            exit 0 ;;
         --create) create=true ;;
         --show) show=true ;;
         -h|--help) usage ;;

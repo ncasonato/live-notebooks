@@ -5,9 +5,11 @@ document: direct writes are silently discarded or overwrite unsaved edits, and
 direct reads can be stale. Notebooks outside JUPYTER_ROOT can't be live
 documents of this server (nor opened through it), so they are left alone.
 
-Reads are denied, with a reason that points Claude to the MCP tools. Edits ask
-the user, who can approve one when the MCP tools can't do it (e.g. cell tags)
-and the notebook is closed everywhere. Set JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1
+All file tools are denied, with a reason that points Claude to the MCP tools
+and, for what they can't do (e.g. cell tags), to the nbformat procedure.
+Asking the user instead is pointless: Claude Code won't edit a notebook it
+hasn't Read, so only Write of a new notebook could reach the prompt, and that
+belongs in use_notebook(mode="create"). Set JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1
 (e.g. in the "env" block of settings.json) to switch this off.
 """
 import json
@@ -43,35 +45,21 @@ root = jupyter_root()
 if target != root and root not in target.parents:
     sys.exit(0)
 
-tool = event.get("tool_name")
-procedure = (
-    "If the MCP tools can't do what is needed (e.g. cell metadata or tags, "
-    "notebook metadata, changing a cell's type), explain that to the user and, "
-    "with their OK: unuse_notebook, make sure the notebook isn't open in "
-    "JupyterLab or an editor, edit it with nbformat from Bash, then reopen it."
+reason = (
+    f"{event.get('tool_name')} on {path} is blocked by the jupyter-live plugin: "
+    "notebooks are live collaborative documents, so read, create, edit and run "
+    "them with the jupyter MCP tools (use_notebook, read_notebook, read_cell, "
+    "insert_cell, edit_cell_source, ...); paths there are relative to "
+    f"{root}. If the MCP tools can't do what is needed (e.g. cell metadata or "
+    "tags, notebook metadata), explain that to the user and, with their OK: "
+    "unuse_notebook, make sure the notebook isn't open in JupyterLab or an "
+    "editor, edit it with nbformat from Bash, then reopen it."
 )
-if tool == "Read":
-    decision = "deny"
-    reason = (
-        f"Read on {path} is blocked by the jupyter-live plugin: notebooks are live "
-        "collaborative documents, so read them with the jupyter MCP tools "
-        "(use_notebook, read_notebook, read_cell); paths there are relative to "
-        f"{root}. {procedure}"
-    )
-else:
-    decision = "ask"
-    reason = (
-        f"jupyter-live: {tool} would change {path} as a file, bypassing the live "
-        "notebook. Approve only if the MCP tools can't make this change and the "
-        "notebook isn't open in JupyterLab, an editor or an MCP session; "
-        "otherwise unsaved edits are lost or the change is overwritten."
-    )
-
 json.dump(
     {
         "hookSpecificOutput": {
             "hookEventName": "PreToolUse",
-            "permissionDecision": decision,
+            "permissionDecision": "deny",
             "permissionDecisionReason": reason,
         }
     },

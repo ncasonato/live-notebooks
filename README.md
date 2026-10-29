@@ -23,10 +23,10 @@ What the plugin adds on top of the server:
   shared machine through `ps`).
 - **`jkernel`** to list, start and stop kernels, with their memory use.
 - **Guardrails**: for notebooks under the notebook root, a hook stops Claude
-  from reading `.ipynb` files as text and asks you before it edits one
-  directly, which would clobber the live notebook you have open. A skill
-  teaches it the workflow, including what to do for the few things the MCP
-  tools can't change (cell tags, notebook metadata).
+  from reading or editing `.ipynb` files as text, which would clobber the
+  live notebook you have open. A skill teaches it the workflow, including a
+  safe way, with your OK, to do the few things the MCP tools can't (cell
+  tags, notebook metadata).
 
 Works on Linux and macOS (and WSL), on a laptop or a remote machine such as an
 HPC cluster node. The hooks and `jkernel` need `python3` on your PATH.
@@ -132,7 +132,10 @@ interactive Slurm job, and handles that without extra setup:
   ([datalayer/jupyter-nbmodel-client#67](https://github.com/datalayer/jupyter-nbmodel-client/pull/67)).
   For bigger notebooks, raise it with `jupyter-live-setup --max-notebook-mb N`
   and reconnect with `/mcp`.
-- When Claude asks to edit a notebook directly, approve only if the MCP tools
-  can't make the change and the notebook isn't open anywhere. To switch the
-  hook off entirely, set `JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1` in the `env`
-  block of `~/.claude/settings.json`.
+- If the first plot in a kernel shows up as `<Figure size … with 1 Axes>`
+  instead of an image, run `%matplotlib inline` first (Claude does this
+  itself). It happens with some version mixes, e.g. matplotlib older than 3.9
+  with IPython 9, in JupyterLab too.
+- To switch the notebook guard off entirely, set
+  `JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1` in the `env` block of
+  `~/.claude/settings.json`.

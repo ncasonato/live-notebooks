@@ -14,11 +14,12 @@ and whether it is running.
 
 - Read, create, edit and run notebooks only with the `jupyter` MCP tools
   (`use_notebook`, `read_notebook`, `insert_cell`, `edit_cell_source`,
-  `execute_cell`, `execute_code`, ...). Don't Read/Edit/Write/NotebookEdit a
-  `.ipynb` under the notebook root, or modify one from Bash, except as below.
-  An open notebook is a live collaborative document: direct writes are
-  silently discarded or overwrite unsaved edits, and direct reads can be
-  stale. A hook denies Read and asks the user before file edits.
+  `execute_cell`, `execute_code`, ...), and create them with
+  `use_notebook(mode="create")`. Don't Read/Edit/Write/NotebookEdit a `.ipynb`
+  under the notebook root, or modify one from Bash, except as below. An open
+  notebook is a live collaborative document: direct writes are silently
+  discarded or overwrite unsaved edits, and direct reads can be stale. A hook
+  denies the file tools there.
 - Notebooks outside the notebook root can't be opened through MCP; treat them
   as ordinary files.
 - If the MCP server is unavailable, say so and ask before touching the file.
@@ -56,6 +57,13 @@ Each env (conda env or venv) is a kernel spec; `jkernel specs` lists them
   Python: `<env prefix>/bin/python -m ipykernel install --user --name <name>`
   (it needs `ipykernel`; for R, `IRkernel::installspec(name = "<name>")`).
   Restart is not needed; `jkernel specs` picks it up.
+
+## Plots
+
+Plot outputs come back as images. Run `%matplotlib inline` in a kernel before
+its first plot: with some version mixes (e.g. matplotlib < 3.9 with IPython 9)
+the first figure of a fresh kernel otherwise comes back only as text like
+`<Figure size 640x480 with 1 Axes>`. If that happens, run the cell again.
 
 ## Memory
 

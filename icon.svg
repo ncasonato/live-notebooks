@@ -5,7 +5,8 @@
       <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#0F172A" flood-opacity="0.35"/>
     </filter>
   </defs>
-  <g filter="url(#shadow)">
+  <!-- Shifted down so the artwork (y 4–112) sits centered; the shadow hangs below -->
+  <g filter="url(#shadow)" transform="translate(0 6)">
     <!-- Orbit behind the notebook -->
     <ellipse cx="64" cy="84" rx="60" ry="18" fill="none" stroke="#F37726" stroke-width="6" stroke-opacity="0.45" transform="rotate(-18 64 84)"/>
     <!-- Notebook, drawn at its original size and scaled up to fill the canvas -->

@@ -33,13 +33,15 @@ setup for them:
   user wants it elsewhere (e.g. off a small home quota), or, without
   --create, to reuse an existing server env.
 - It takes a few minutes; run it with a generous timeout. Afterwards the user
-  reconnects with /mcp (or starts a new session).
+  reconnects the server from /mcp (select it, then Reconnect). A restart or
+  new session is not enough for 15 minutes: Claude Code skips a plugin's MCP
+  server for that long after a failed start.
 EOF
 if (( found == 0 )); then
     cat <<'EOF'
 - No env manager was found here (no conda/mamba, no uv, no Python >= 3.10).
   Tell the user they need one first, e.g. uv (`brew install uv` on macOS, or
-  https://docs.astral.sh/uv/) or Miniforge, and to run the installer
+  uv's standalone installer) or Miniforge, and to run the installer
   themselves since it changes their shell setup.
 EOF
     exit 0

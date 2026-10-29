@@ -68,8 +68,12 @@ If you installed it under its earlier names (`jupyter-hpc` or
 
 Ask Claude to set it up, e.g. "set up live-notebooks for my notebooks in
 ~/projects". It runs `live-notebooks-setup --create --root ~/projects`,
-asking you first which env manager to use if you have several. Then
-reconnect the `jupyter` server with `/mcp`, or restart Claude Code.
+asking you first which env manager to use if you have several. Then run
+`/mcp`, select `plugin:live-notebooks:jupyter` and choose **Reconnect**.
+Restarting Claude Code is not enough right away: the server fails to start
+until setup is done, and Claude Code skips a plugin's MCP server for 15
+minutes after a failed start. Without `/mcp`, wait that long and start a new
+session.
 `--root` is the directory JupyterLab serves; notebooks must be under it.
 
 The plugin's commands (`live-notebooks-setup`, `jkernel`) are on PATH only

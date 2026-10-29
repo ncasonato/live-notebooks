@@ -85,7 +85,7 @@ create_env() {
         command -v uv > /dev/null && found+=" uv"
         [[ -n $py ]] && found+=" venv"
         [[ -n $found ]] || die "--create needs conda/mamba, uv, or Python >= 3.10" \
-            "(e.g. brew install uv, or https://docs.astral.sh/uv/)"
+            "(e.g. brew install uv, or uv's standalone installer)"
         manager=${found# }; manager=${manager%% *}
         if [[ $found == " "*" "* ]]; then  # more than one
             echo "found:$found; using $manager (choose another with --with)"
@@ -194,5 +194,6 @@ if [[ -n ${running:-} ]]; then
         "stop it with 'kill $running' (this also ends its kernels), then reconnect" \
         "with /mcp or restart Claude Code."
 elif ! $show; then
-    echo "Done. Reconnect the MCP server with /mcp (or restart Claude Code)."
+    echo "Done. Reconnect the MCP server: /mcp, select it, Reconnect. A restart" \
+        "skips it for 15 minutes after a failed start."
 fi

@@ -33,7 +33,9 @@ def load_config():
             k, sep, v = line.partition("=")
             if sep and re.fullmatch(r"[A-Z_]+", k):
                 conf[k] = v
-    conf.update({k: v for k, v in os.environ.items() if k.startswith("JUPYTER_") and v})
+    for k in ("JUPYTER_MCP_ENV", "JUPYTER_ROOT", "JUPYTER_PORT"):
+        if os.environ.get(k):
+            conf[k] = os.environ[k]
     conf.setdefault("JUPYTER_ROOT", str(Path.home()))
     conf.setdefault("JUPYTER_PORT", str(8000 + os.getuid() % 1000))
     return conf

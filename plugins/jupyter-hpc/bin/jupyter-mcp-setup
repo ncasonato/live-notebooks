@@ -4,6 +4,7 @@
 # current value.
 #
 #   jupyter-mcp-setup --env PREFIX [--create] [--root DIR] [--port N] [--default-kernel SPEC]
+#                     [--max-notebook-mb N]
 #   jupyter-mcp-setup --show
 #
 #   --env PREFIX          conda env with jupyterlab + jupyter-mcp-server
@@ -11,11 +12,12 @@
 #   --root DIR            JupyterLab root; notebook paths are relative to it
 #   --port N              default: 8000 + uid % 1000
 #   --default-kernel SPEC kernel MCP gets when it starts one itself (see `jkernel specs`)
+#   --max-notebook-mb N   largest notebook the MCP client can load (default: 256)
 set -euo pipefail
 PLUGIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
 . "$PLUGIN/scripts/common.sh"
 
-usage() { sed -n '2,13s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
+usage() { sed -n '2,15s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
 
 declare -A new=()
 create=false show=false
@@ -25,6 +27,9 @@ while (( $# )); do
         --root) new[JUPYTER_ROOT]="$(readlink -m "$2")"; shift ;;
         --port) new[JUPYTER_PORT]="$2"; shift ;;
         --default-kernel) new[JUPYTER_DEFAULT_KERNEL]="$2"; shift ;;
+        --max-notebook-mb)
+            [[ $2 =~ ^[1-9][0-9]*$ ]] || { echo "--max-notebook-mb needs a whole number" >&2; exit 1; }
+            new[WEBSOCKETS_MAX_BODY_SIZE]=$(( $2 * 1024 * 1024 )); shift ;;
         --create) create=true ;;
         --show) show=true ;;
         -h|--help) usage ;;
@@ -80,4 +85,5 @@ echo "  JUPYTER_MCP_ENV        ${JUPYTER_MCP_ENV:-(not set)}"
 echo "  JUPYTER_ROOT           $JUPYTER_ROOT"
 echo "  JUPYTER_PORT           $JUPYTER_PORT"
 echo "  JUPYTER_DEFAULT_KERNEL $JUPYTER_DEFAULT_KERNEL"
+echo "  WEBSOCKETS_MAX_BODY_SIZE $WEBSOCKETS_MAX_BODY_SIZE ($(( WEBSOCKETS_MAX_BODY_SIZE / 1024 / 1024 )) MB)"
 $show || echo "Done. Reconnect the MCP server with /mcp (or restart Claude Code)."

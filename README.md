@@ -45,7 +45,8 @@ Claude to set it up.
 `jupyter-mcp-setup --show` prints the current settings. They are stored in
 `~/.jupyter_mcp/config` and can be overridden by environment variables of
 the same name: `JUPYTER_MCP_ENV`, `JUPYTER_ROOT`, `JUPYTER_PORT` (default
-8000 + uid % 1000) and `JUPYTER_DEFAULT_KERNEL`.
+8000 + uid % 1000), `JUPYTER_DEFAULT_KERNEL` and `WEBSOCKETS_MAX_BODY_SIZE`
+(bytes; set with `--max-notebook-mb`, see Notes).
 
 ## Make your conda envs available as kernels
 
@@ -87,6 +88,8 @@ To open the same JupyterLab in your browser:
   notebook over the limit (e.g. with many embedded plots) silently opens as
   empty. Later releases raise an error instead
   ([datalayer/jupyter-nbmodel-client#67](https://github.com/datalayer/jupyter-nbmodel-client/pull/67)).
+  For bigger notebooks, raise it with `jupyter-mcp-setup --max-notebook-mb N`
+  and reconnect with `/mcp`.
 - To let Claude edit a `.ipynb` directly anyway, set
   `JUPYTER_MCP_ALLOW_DIRECT_NOTEBOOK=1` in the `env` block of
   `~/.claude/settings.json`.

@@ -6,6 +6,7 @@
 #   JUPYTER_ROOT            JupyterLab root; notebook paths are relative to it (default: $HOME)
 #   JUPYTER_PORT            default: 8000 + uid % 1000, so users on a node don't collide
 #   JUPYTER_DEFAULT_KERNEL  kernel spec MCP gets when it starts one itself (default: python3)
+#   WEBSOCKETS_MAX_BODY_SIZE  largest notebook (bytes) the MCP client can load (default: 256 MB)
 JUPYTER_MCP_HOME="$HOME/.jupyter_mcp"
 JUPYTER_MCP_CONFIG="$JUPYTER_MCP_HOME/config"
 JUPYTER_MCP_TOKEN_FILE="$JUPYTER_MCP_HOME/token"
@@ -21,6 +22,11 @@ load_config() {
     export JUPYTER_ROOT="${JUPYTER_ROOT:-$HOME}"
     export JUPYTER_PORT="${JUPYTER_PORT:-$(( 8000 + $(id -u) % 1000 ))}"
     export JUPYTER_DEFAULT_KERNEL="${JUPYTER_DEFAULT_KERNEL:-python3}"
+    # The nbmodel client's default 16 MB websocket limit makes larger notebooks
+    # (e.g. with embedded images) silently load as empty. Releases after
+    # jupyter-nbmodel-client 1.5.1 raise an error instead
+    # (datalayer/jupyter-nbmodel-client#67); the limit still needs raising.
+    export WEBSOCKETS_MAX_BODY_SIZE="${WEBSOCKETS_MAX_BODY_SIZE:-$((256 * 1024 * 1024))}"
 }
 
 # Exit with a pointer to setup unless config, env and token are all in place.

@@ -18,9 +18,11 @@ What the plugin adds on top of the server:
 
 - **Starts JupyterLab for you** on the machine Claude Code runs on, on a
   per-user port, the first time Claude needs it.
-- **Keeps the token private**: it lives in `~/.jupyter_mcp/token` and never
-  appears in config files or on a command line (visible to every user of a
-  shared machine through `ps`).
+- **Keeps the token private**: on a shared machine, other users can reach
+  your JupyterLab on `127.0.0.1`; the token is what keeps them out. It lives
+  in `~/.jupyter_mcp/token`, readable only by you, and never appears in
+  config files or on a command line, where other users could see it with
+  `ps`.
 - **`jkernel`** to list, start and stop kernels, with their memory use.
 - **Guardrails**: for notebooks under the notebook root, a hook stops Claude
   from reading or editing `.ipynb` files as text, which would clobber the

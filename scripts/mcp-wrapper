@@ -38,10 +38,15 @@ except Exception:
 PY
 }
 
+ours=$(our_server "$JUPYTER_PORT"); ours=${ours%% *}
 status=0; server_status || status=$?
-if (( status == 2 )); then
+if (( status == 0 )) && [[ -n $ours ]] && ! our_server "$JUPYTER_PORT" | grep -qF " $E/"; then
+    # Reusing it is still right (killing it would end the user's kernels),
+    # but the config now names another env.
+    echo "live-notebooks: your Jupyter server (PID $ours) runs from another env than" \
+        "JUPYTER_MCP_ENV ($E); to switch, stop it (kill $ours) and reconnect with /mcp" >&2
+elif (( status == 2 )); then
     # Our own JupyterLab answers 403 too once the token file has changed.
-    ours=$(ps -u "$(id -u)" -o pid=,args= | grep "[j]upyter-lab .*--port $JUPYTER_PORT " | awk '{print $1}' | head -1 || true)
     if [[ -n $ours ]]; then
         echo "live-notebooks: your Jupyter server on port $JUPYTER_PORT (PID $ours) rejects" \
             "the token in $JUPYTER_MCP_TOKEN_FILE, which changed after it started;" \
@@ -57,9 +62,18 @@ elif (( status == 1 )); then
         mv -f "$LOG" "$LOG.old"
     fi
     echo "live-notebooks: starting Jupyter on $JUPYTER_URL (log: $LOG)" >&2
-    # New session via Python's os.setsid: macOS has no setsid command.
-    nohup "$E/bin/python" -c 'import os, sys; os.setsid(); os.execv(sys.argv[1], sys.argv[1:])' \
-        "$HERE/start-jupyter" >> "$LOG" 2>&1 < /dev/null &
+    # Detach by double fork into a new session, in Python since macOS has no
+    # setsid command: the server is reparented to init, so it neither dies with
+    # this MCP session nor lingers as its zombie child once stopped.
+    "$E/bin/python" -c '
+import os, sys
+if os.fork() == 0:
+    os.setsid()
+    if os.fork() == 0:
+        os.execv(sys.argv[1], sys.argv[1:])
+    os._exit(0)
+os.wait()
+' "$HERE/start-jupyter" >> "$LOG" 2>&1 < /dev/null
     for _ in $(seq 1 60); do
         sleep 1
         status=0; server_status || status=$?

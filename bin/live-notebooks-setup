@@ -80,12 +80,15 @@ create_env() {
     conda=$(conda_exe)
     py=$(python_310)
     if [[ -z $manager ]]; then
-        if [[ -n $conda ]]; then manager=conda
-        elif command -v uv > /dev/null; then manager=uv
-        elif [[ -n $py ]]; then manager=venv
-        else
-            die "--create needs conda/mamba, uv, or Python >= 3.10" \
-                "(e.g. brew install uv, or https://docs.astral.sh/uv/)"
+        local found=""
+        [[ -n $conda ]] && found+=" conda"
+        command -v uv > /dev/null && found+=" uv"
+        [[ -n $py ]] && found+=" venv"
+        [[ -n $found ]] || die "--create needs conda/mamba, uv, or Python >= 3.10" \
+            "(e.g. brew install uv, or https://docs.astral.sh/uv/)"
+        manager=${found# }; manager=${manager%% *}
+        if [[ $found == " "*" "* ]]; then  # more than one
+            echo "found:$found; using $manager (choose another with --with)"
         fi
     fi
     case $manager in
@@ -162,7 +165,14 @@ if ! $show; then
         exit 1
     fi
 
+    # Settings a running server was started with; changing them needs a restart.
+    restart_keys='^(JUPYTER_MCP_ENV|JUPYTER_ROOT|JUPYTER_PORT|JUPYTER_DEFAULT_KERNEL)='
+    old_port=$( (load_config; echo "$JUPYTER_PORT") )
+    old=$( { [[ -f $JUPYTER_MCP_CONFIG ]] && grep -E "$restart_keys" "$JUPYTER_MCP_CONFIG"; } | sort || true)
     printf '%s\n' "$merged" > "$JUPYTER_MCP_CONFIG"
+    if [[ $old != "$(printf '%s\n' "$merged" | grep -E "$restart_keys" | sort || true)" ]]; then
+        running=$(our_server "$old_port"); running=${running%% *}
+    fi
 
     if [[ ! -s $JUPYTER_MCP_TOKEN_FILE ]]; then
         # No trailing newline: Jupyter reads JUPYTER_TOKEN_FILE verbatim.
@@ -179,4 +189,10 @@ echo "  JUPYTER_ROOT           $JUPYTER_ROOT"
 echo "  JUPYTER_PORT           $JUPYTER_PORT"
 echo "  JUPYTER_DEFAULT_KERNEL $JUPYTER_DEFAULT_KERNEL"
 echo "  WEBSOCKETS_MAX_BODY_SIZE $WEBSOCKETS_MAX_BODY_SIZE ($(( WEBSOCKETS_MAX_BODY_SIZE / 1024 / 1024 )) MB)"
-$show || echo "Done. Reconnect the MCP server with /mcp (or restart Claude Code)."
+if [[ -n ${running:-} ]]; then
+    echo "Done. Your Jupyter server (PID $running) still runs with the old settings:" \
+        "stop it with 'kill $running' (this also ends its kernels), then reconnect" \
+        "with /mcp or restart Claude Code."
+elif ! $show; then
+    echo "Done. Reconnect the MCP server with /mcp (or restart Claude Code)."
+fi

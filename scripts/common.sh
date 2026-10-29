@@ -44,6 +44,13 @@ python_310() {
     done
 }
 
+# "PID ARGS" of the JupyterLab that start-jupyter runs for this user on port
+# $1, if any. Its args name the env it runs from (…/bin/python …/jupyter-lab).
+our_server() {
+    ps -u "$(id -u)" -o pid=,args= \
+        | grep "[j]upyter-lab .*--port $1 --port-retries 0" | sed 's/^ *//' | head -1 || true
+}
+
 # Native Windows (Git Bash, MSYS, Cygwin) lacks what the scripts rely on, from
 # POSIX sessions to bin/ env layouts; WSL is Linux and works.
 require_unix() {

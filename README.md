@@ -82,14 +82,22 @@ server, in `~/.jupyter_mcp/env` (`--env PATH` to put it elsewhere). This is
 not one of your project envs; those become kernels. Pick how it is built with
 `--with`:
 
-- `--with conda`: conda/mamba, from `environment.yml`;
-- `--with uv`: [uv](https://docs.astral.sh/uv/), which downloads Python
-  itself if needed;
+- `--with conda`: conda/mamba, from `environment.yml` (about 550 MB);
+- `--with uv`: [uv](https://docs.astral.sh/uv/), from `requirements.txt`.
+  The fastest (seconds) and smallest (about 350 MB); it uses a Python that uv
+  downloads and manages itself;
 - `--with venv`: a venv from Python 3.10 or newer, from `requirements.txt`.
+  The env stays tied to the Python it was made from: if that Python is
+  removed or upgraded away, run setup with `--create` again.
 
-Without `--with`, setup uses the first of these it finds. When Claude sets it
-up, it asks which you prefer if more than one is installed. On a Mac with none
-of them, `brew install uv` is enough.
+Without `--with`, setup uses the first of these it finds, in that order, and
+says which others it found. When Claude sets it up, it asks which you prefer
+if more than one is installed. On a Mac with none of them, `brew install uv`
+is enough.
+
+Changing the env, root, port or default kernel only takes effect for a new
+JupyterLab: setup says when one is still running with the old settings, and
+how to stop it.
 
 To use an existing env instead, leave out `--create` and pass `--env PATH`:
 it needs `jupyterlab`, `jupyter-collaboration` and `jupyter-mcp-server`.

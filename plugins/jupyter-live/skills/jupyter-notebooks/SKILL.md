@@ -14,16 +14,33 @@ and whether it is running.
 
 - Read, create, edit and run notebooks only with the `jupyter` MCP tools
   (`use_notebook`, `read_notebook`, `insert_cell`, `edit_cell_source`,
-  `execute_cell`, `execute_code`, ...). Never Read/Edit/Write/NotebookEdit a
-  `.ipynb`, and never modify one from Bash. An open notebook is a live
-  collaborative document: direct writes are silently discarded or overwrite
-  unsaved edits, and direct reads can be stale. A hook blocks the file tools.
+  `execute_cell`, `execute_code`, ...). Don't Read/Edit/Write/NotebookEdit a
+  `.ipynb` under the notebook root, or modify one from Bash, except as below.
+  An open notebook is a live collaborative document: direct writes are
+  silently discarded or overwrite unsaved edits, and direct reads can be
+  stale. A hook denies Read and asks the user before file edits.
+- Notebooks outside the notebook root can't be opened through MCP; treat them
+  as ordinary files.
 - If the MCP server is unavailable, say so and ask before touching the file.
   Its log is `~/.jupyter_mcp/<host>.log`. Never start the server by hand from
   a session; the user reconnects it with `/mcp`.
 - Notebook paths are relative to the notebook root (`JUPYTER_ROOT`, given at
   session start and by `jkernel info`), e.g. `project/analysis.ipynb`.
   Names starting with `.` are rejected.
+
+## When the MCP tools can't do it
+
+The tools cover cell sources, outputs, order and execution. They can't change
+cell metadata or tags (e.g. Jupyter Book's `remove-input`, `hide-cell`),
+notebook metadata (kernelspec, title), an existing cell's type (delete and
+re-insert instead) or attachments. For those:
+
+1. Tell the user what can't be done through MCP and ask before going on.
+2. `unuse_notebook`, and confirm with the user that the notebook isn't open in
+   JupyterLab or an editor, so no live copy can overwrite the change.
+3. Edit the file with `nbformat` from Bash (it validates the result), using
+   the server env's Python (`jkernel info` shows the env).
+4. `use_notebook` again and check the result with `read_notebook`.
 
 ## Choose the env by kernel
 

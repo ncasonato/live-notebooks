@@ -1,7 +1,7 @@
 {
   "name": "jupyter-live",
   "displayName": "Jupyter Live",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Claude works in live Jupyter notebooks instead of .ipynb text: runs cells, sees plots, keeps kernel state, uses any env as a kernel. Starts JupyterLab on demand, on a laptop or a cluster node.",
   "author": {
     "name": "ncasonato",

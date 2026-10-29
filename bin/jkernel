@@ -33,9 +33,14 @@ def load_config():
             k, sep, v = line.partition("=")
             if sep and re.fullmatch(r"[A-Z_]+", k):
                 conf[k] = v
-    for k in ("JUPYTER_MCP_ENV", "JUPYTER_ROOT", "JUPYTER_PORT"):
-        if os.environ.get(k):
-            conf[k] = os.environ[k]
+    # Each name spelled out: the plugin directory's validator holds a lookup by
+    # a computed name as possibly reading a credential.
+    env = {
+        "JUPYTER_MCP_ENV": os.environ.get("JUPYTER_MCP_ENV"),
+        "JUPYTER_ROOT": os.environ.get("JUPYTER_ROOT"),
+        "JUPYTER_PORT": os.environ.get("JUPYTER_PORT"),
+    }
+    conf.update({k: v for k, v in env.items() if v})
     conf.setdefault("JUPYTER_ROOT", str(Path.home()))
     conf.setdefault("JUPYTER_PORT", str(8000 + os.getuid() % 1000))
     return conf

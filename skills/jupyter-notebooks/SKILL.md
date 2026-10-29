@@ -27,7 +27,9 @@ and whether it is running.
   a session; the user reconnects it with `/mcp`.
 - Notebook paths are relative to the notebook root (`JUPYTER_ROOT`, given at
   session start and by `jkernel info`), e.g. `project/analysis.ipynb`.
-  Names starting with `.` are rejected.
+  Names starting with `.` are rejected. `use_notebook(mode="create")` fails
+  if the folder doesn't exist yet: create it first with `mkdir -p` under the
+  root.
 
 ## Bulk edits, and what the MCP tools can't do
 
@@ -61,7 +63,12 @@ Each env (conda env or venv) is a kernel spec; `jkernel specs` lists them
 (`*` = default).
 
 - The MCP server always requests a kernel named `python3`, which maps to the
-  default kernel (`JUPYTER_DEFAULT_KERNEL`).
+  default kernel (`JUPYTER_DEFAULT_KERNEL`). Unless the user changed it, that
+  is the server env itself: Jupyter only, no numpy, pandas or matplotlib.
+  Use it for plain Python, not analysis. For analysis, pick the project's env
+  from `jkernel specs`; if none fits, say so and suggest registering one (or
+  setting it as the default with `live-notebooks-setup --default-kernel`),
+  rather than installing packages into the server env.
 - For any other env: `jkernel start <spec>` prints an id, then
   `use_notebook(..., kernel_id=<id>)` or `execute_code(kernel_id=<id>)`.
 - A kernel shows as "starting" until a client connects; that is not a hang.

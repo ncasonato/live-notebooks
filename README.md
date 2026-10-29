@@ -110,7 +110,9 @@ With each env you want to use (it needs `ipykernel`):
 
 Use `IRkernel::installspec(name = "<name>")` for R. Then `jkernel specs` lists
 it. Set `--default-kernel <name>` if most of your work is in one env: that is
-the kernel Claude gets when it does not pick one.
+the kernel Claude gets when it does not pick one. Out of the box the default
+is the server env itself, which has Jupyter but no numpy, pandas or
+matplotlib, so register at least one analysis env.
 
 ## Use
 

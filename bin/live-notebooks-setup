@@ -8,7 +8,7 @@
 #   live-notebooks-setup --show
 #   live-notebooks-setup --link [DIR]
 #
-#   --link [DIR]          put launchers for jkernel and live-notebooks-setup in DIR (default
+#   --link [DIR]          write launchers for jkernel and live-notebooks-setup in DIR (default
 #                         ~/.local/bin), so they work outside Claude Code too
 #   --create              create the server env
 #   --with MANAGER        conda, uv, or venv (python3 >= 3.10); default: the first found
@@ -64,7 +64,7 @@ fi
 exec "\$root/bin/$name" "\$@"
 EOF
         chmod +x "$target"
-        echo "linked $target"
+        echo "wrote launcher $target"
     done
     case ":$PATH:" in
         *":$dir:"*) ;;

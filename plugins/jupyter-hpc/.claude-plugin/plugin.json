@@ -6,5 +6,14 @@
     "name": "ncasonato",
     "email": "17475077+ncasonato@users.noreply.github.com"
   },
-  "keywords": ["jupyter", "notebook", "mcp", "hpc", "slurm", "conda"]
+  "keywords": [
+    "jupyter",
+    "notebook",
+    "mcp",
+    "hpc",
+    "slurm",
+    "conda"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/ncasonato/claude-jupyter-mcp"
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup for the jupyter-hpc plugin: writes ~/.jupyter_mcp/config and
+# One-time setup for the jupyter-live plugin: writes ~/.jupyter_mcp/config and
 # creates the private token. Safe to re-run; options not given keep their
 # current value.
 #
@@ -7,29 +7,32 @@
 #                     [--max-notebook-mb N]
 #   jupyter-mcp-setup --show
 #
-#   --env PREFIX          conda env with jupyterlab + jupyter-mcp-server
-#   --create              create that env from the plugin's environment.yml
+#   --env PREFIX          Python env (conda or venv) with jupyterlab + jupyter-mcp-server
+#   --create              create that env with conda from the plugin's environment.yml
 #   --root DIR            JupyterLab root; notebook paths are relative to it
 #   --port N              default: 8000 + uid % 1000
 #   --default-kernel SPEC kernel MCP gets when it starts one itself (see `jkernel specs`)
 #   --max-notebook-mb N   largest notebook the MCP client can load (default: 256)
 set -euo pipefail
-PLUGIN="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# Plain bash 3.2 (macOS): no associative arrays, no GNU readlink.
+PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 . "$PLUGIN/scripts/common.sh"
 
 usage() { sed -n '2,15s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
+abspath() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
 
-declare -A new=()
+# Settings given on the command line, as KEY=VALUE lines.
+new=""
 create=false show=false
 while (( $# )); do
     case $1 in
-        --env) new[JUPYTER_MCP_ENV]="$(readlink -m "$2")"; shift ;;
-        --root) new[JUPYTER_ROOT]="$(readlink -m "$2")"; shift ;;
-        --port) new[JUPYTER_PORT]="$2"; shift ;;
-        --default-kernel) new[JUPYTER_DEFAULT_KERNEL]="$2"; shift ;;
+        --env) new+="JUPYTER_MCP_ENV=$(abspath "$2")"$'\n'; shift ;;
+        --root) new+="JUPYTER_ROOT=$(abspath "$2")"$'\n'; shift ;;
+        --port) new+="JUPYTER_PORT=$2"$'\n'; shift ;;
+        --default-kernel) new+="JUPYTER_DEFAULT_KERNEL=$2"$'\n'; shift ;;
         --max-notebook-mb)
             [[ $2 =~ ^[1-9][0-9]*$ ]] || { echo "--max-notebook-mb needs a whole number" >&2; exit 1; }
-            new[WEBSOCKETS_MAX_BODY_SIZE]=$(( $2 * 1024 * 1024 )); shift ;;
+            new+="WEBSOCKETS_MAX_BODY_SIZE=$(( $2 * 1024 * 1024 ))"$'\n'; shift ;;
         --create) create=true ;;
         --show) show=true ;;
         -h|--help) usage ;;
@@ -42,16 +45,11 @@ mkdir -p "$JUPYTER_MCP_HOME"
 chmod 700 "$JUPYTER_MCP_HOME"
 
 if ! $show; then
-    # Keep current values for keys not given on the command line.
-    declare -A conf=()
-    if [[ -f $JUPYTER_MCP_CONFIG ]]; then
-        while IFS='=' read -r k v; do
-            [[ $k =~ ^[A-Z_]+$ ]] && conf[$k]=$v
-        done < "$JUPYTER_MCP_CONFIG"
-    fi
-    for k in "${!new[@]}"; do conf[$k]=${new[$k]}; done
+    # Current config with the new values on top; for each key the last line wins.
+    merged="$( { [[ -f $JUPYTER_MCP_CONFIG ]] && cat "$JUPYTER_MCP_CONFIG"; printf '%s' "$new"; } \
+        | grep -E '^[A-Z_]+=' | awk -F= '{ v[$1] = $0 } END { for (k in v) print v[k] }' | sort || true)"
 
-    env_prefix=${conf[JUPYTER_MCP_ENV]:-}
+    env_prefix="$(printf '%s\n' "$merged" | sed -n 's/^JUPYTER_MCP_ENV=//p')"
     if [[ -z $env_prefix ]]; then
         echo "jupyter-mcp-setup: --env is required on first setup" >&2
         usage 1
@@ -62,14 +60,11 @@ if ! $show; then
         "$conda" env create -y -p "$env_prefix" -f "$PLUGIN/environment.yml"
     fi
     if [[ ! -x $env_prefix/bin/jupyter-mcp-server || ! -x $env_prefix/bin/jupyter-lab ]]; then
-        echo "jupyter-mcp-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (use --create)" >&2
+        echo "jupyter-mcp-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2
         exit 1
     fi
 
-    : > "$JUPYTER_MCP_CONFIG"
-    for k in $(printf '%s\n' "${!conf[@]}" | sort); do
-        echo "$k=${conf[$k]}" >> "$JUPYTER_MCP_CONFIG"
-    done
+    printf '%s\n' "$merged" > "$JUPYTER_MCP_CONFIG"
 
     if [[ ! -s $JUPYTER_MCP_TOKEN_FILE ]]; then
         # No trailing newline: Jupyter reads JUPYTER_TOKEN_FILE verbatim.

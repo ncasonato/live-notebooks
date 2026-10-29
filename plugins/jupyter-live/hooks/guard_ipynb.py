@@ -19,7 +19,7 @@ if not path.endswith(".ipynb"):
     sys.exit(0)
 
 reason = (
-    f"{event.get('tool_name')} on {path} is blocked by the jupyter-hpc plugin: "
+    f"{event.get('tool_name')} on {path} is blocked by the jupyter-live plugin: "
     "notebooks are live collaborative documents, so read, edit and run them "
     "through the jupyter MCP tools (use_notebook, read_notebook, "
     "edit_cell_source, insert_cell, execute_cell, ...). Notebook paths there are "

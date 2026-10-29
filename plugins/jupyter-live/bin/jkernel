@@ -15,6 +15,7 @@ A kernel shows as "starting" until a client (MCP, JupyterLab) connects to it.
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -44,30 +45,39 @@ TOKEN_FILE = HOME / "token"
 
 
 def api(method, path, body=None):
+    try:
+        token = TOKEN_FILE.read_text().strip()
+    except FileNotFoundError:
+        sys.exit(f"jkernel: no token in {TOKEN_FILE}; run jupyter-mcp-setup")
     req = urllib.request.Request(
         URL + path,
         method=method,
         data=json.dumps(body).encode() if body is not None else None,
-        headers={
-            "Authorization": f"token {TOKEN_FILE.read_text().strip()}",
-            "Content-Type": "application/json",
-        },
+        headers={"Authorization": f"token {token}", "Content-Type": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.loads(r.read() or "null")
 
 
-def rss_mb(kernel_id):
-    # The kernel's process has its id in the connection-file argument.
-    for proc in Path("/proc").iterdir():
-        try:
-            if kernel_id in (proc / "cmdline").read_text():
-                for line in (proc / "status").read_text().splitlines():
-                    if line.startswith("VmRSS:"):
-                        return int(line.split()[1]) // 1024
-        except (OSError, ValueError):
-            continue
-    return None
+def process_mb():
+    # Memory per process command line, from ps (Linux and macOS); a kernel's
+    # command line holds its id in the connection-file argument.
+    try:
+        out = subprocess.run(
+            ["ps", "-A", "-o", "rss=,command="], capture_output=True, text=True, check=True
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return []
+    procs = []
+    for line in out.splitlines():
+        rss, _, cmd = line.strip().partition(" ")
+        if rss.isdigit():
+            procs.append((int(rss) // 1024, cmd))
+    return procs
+
+
+def kernel_mb(procs, kernel_id):
+    return next((mb for mb, cmd in procs if kernel_id in cmd), None)
 
 
 def main(argv):
@@ -88,8 +98,9 @@ def main(argv):
             print(f"{mark} {name:20} {s['spec']['display_name']}")
     elif cmd == "list":
         sessions = {s["kernel"]["id"]: s["path"] for s in api("GET", "/sessions")}
+        procs = process_mb()
         for k in api("GET", "/kernels"):
-            mb = rss_mb(k["id"])
+            mb = kernel_mb(procs, k["id"])
             mem = f"{mb} MB" if mb is not None else "?"
             print(f"{k['id']}  {k['name']:12} {k['execution_state']:8} {mem:>9}  {sessions.get(k['id'], '')}")
     elif cmd == "start" and len(argv) == 3:
@@ -103,8 +114,6 @@ def main(argv):
 if __name__ == "__main__":
     try:
         main(sys.argv)
-    except FileNotFoundError:
-        sys.exit(f"jkernel: no token in {TOKEN_FILE}; run jupyter-mcp-setup")
     except urllib.error.HTTPError as e:
         sys.exit(f"jkernel: {e.code} {e.reason} ({e.url.split('/api', 1)[1]})")
     except urllib.error.URLError as e:

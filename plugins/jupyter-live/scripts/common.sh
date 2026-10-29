@@ -4,7 +4,7 @@
 #
 #   JUPYTER_MCP_ENV         conda env with jupyterlab + jupyter-mcp-server (required)
 #   JUPYTER_ROOT            JupyterLab root; notebook paths are relative to it (default: $HOME)
-#   JUPYTER_PORT            default: 8000 + uid % 1000, so users on a node don't collide
+#   JUPYTER_PORT            default: 8000 + uid % 1000, so users of a shared machine don't collide
 #   JUPYTER_DEFAULT_KERNEL  kernel spec MCP gets when it starts one itself (default: python3)
 #   WEBSOCKETS_MAX_BODY_SIZE  largest notebook (bytes) the MCP client can load (default: 256 MB)
 JUPYTER_MCP_HOME="$HOME/.jupyter_mcp"
@@ -40,7 +40,7 @@ require_setup() {
         why="no token in $JUPYTER_MCP_TOKEN_FILE"
     fi
     if [[ -n $why ]]; then
-        echo "jupyter-hpc: $why; run jupyter-mcp-setup (see the plugin README)" >&2
+        echo "jupyter-live: $why; run jupyter-mcp-setup (see the plugin README)" >&2
         exit 1
     fi
 }

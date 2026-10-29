@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Start the JupyterLab server used by jupyter-mcp-server.
 #
-# One server per user per node, env-neutral: it runs from JUPYTER_MCP_ENV, and
+# One server per user per machine, env-neutral: it runs from JUPYTER_MCP_ENV, and
 # each project env is a kernel (see `jkernel specs`). Normally mcp-wrapper
 # starts this automatically; run it by hand only to get a server without
 # Claude Code. Settings: see common.sh.
 #
-# Access from your laptop via: ssh -L <port>:localhost:<port> <this-node>
+# On a remote machine, reach it via: ssh -L <port>:localhost:<port> <host>
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/common.sh"
 load_config
@@ -28,7 +28,7 @@ json.dump(spec, open(out, "w"), indent=1)
 PY
 export JUPYTER_PATH="$JUPYTER_MCP_HOME/share${JUPYTER_PATH:+:$JUPYTER_PATH}"
 # Jupyter reads the token from the file itself, so it never appears on the
-# command line (visible to every user on the node via ps).
+# command line (visible to every user on the machine via ps).
 unset JUPYTER_TOKEN
 export JUPYTER_TOKEN_FILE="$JUPYTER_MCP_TOKEN_FILE"
 exec "$E/bin/jupyter" lab --no-browser --ip 127.0.0.1 --port "$JUPYTER_PORT" \

@@ -1,0 +1,19 @@
+{
+  "name": "jupyter-live",
+  "version": "0.2.0",
+  "description": "Claude works in live Jupyter notebooks instead of .ipynb text: runs cells, sees plots, keeps kernel state, uses any env as a kernel. Starts JupyterLab on demand, on a laptop or a cluster node.",
+  "author": {
+    "name": "ncasonato",
+    "email": "17475077+ncasonato@users.noreply.github.com"
+  },
+  "keywords": [
+    "jupyter",
+    "notebook",
+    "mcp",
+    "kernel",
+    "data-science",
+    "hpc"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/ncasonato/claude-jupyter-mcp"
+}

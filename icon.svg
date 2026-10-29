@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="jupyter-hpc">
+  <title>jupyter-hpc</title>
+  <!-- Tile -->
+  <rect width="128" height="128" rx="28" fill="#1E293B"/>
+  <!-- Orbit behind the notebook -->
+  <ellipse cx="64" cy="84" rx="56" ry="17" fill="none" stroke="#F37726" stroke-width="5" stroke-opacity="0.4" transform="rotate(-18 64 84)"/>
+  <!-- Notebook -->
+  <rect x="32" y="18" width="64" height="88" rx="9" fill="#F8FAFC"/>
+  <!-- Cells: run marker + code lines -->
+  <path d="M42 30 l8 5 l-8 5 z" fill="#F37726"/>
+  <rect x="55" y="31" width="31" height="8" rx="4" fill="#F37726"/>
+  <rect x="42" y="47" width="44" height="7" rx="3.5" fill="#94A3B8"/>
+  <rect x="42" y="59" width="30" height="7" rx="3.5" fill="#94A3B8"/>
+  <!-- Plot output -->
+  <polyline points="43,86 52,78 60,82 70,71 85,75" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Orbit in front of the notebook, with its moon -->
+  <path d="M10.7 101.3 A56 17 -18 0 0 117.3 66.7" fill="none" stroke="#F37726" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="112.3" cy="62.2" r="7" fill="#F37726"/>
+</svg>

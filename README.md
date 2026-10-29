@@ -1,3 +1,5 @@
+<img src="icon.svg" alt="" width="96" align="right">
+
 # jupyter-hpc: Jupyter notebooks for Claude Code on the HPC
 
 A Claude Code plugin that lets Claude read, edit and run your Jupyter notebooks

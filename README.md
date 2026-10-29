@@ -1,6 +1,6 @@
 ![](icon.svg)
 
-# Jupyter Live: live Jupyter notebooks for Claude Code
+# Live Notebooks for Jupyter
 
 A Claude Code plugin that lets Claude work in your Jupyter notebooks the way
 you do, instead of editing `.ipynb` files as text. It wraps
@@ -39,7 +39,7 @@ In Claude Code:
 
 ```
 /plugin marketplace add ncasonato/claude-jupyter-mcp
-/plugin install jupyter-live@ncasonato
+/plugin install live-notebooks@ncasonato
 ```
 
 `/plugin marketplace update ncasonato` picks up new versions.
@@ -49,7 +49,7 @@ In Claude Code:
 The easiest way is to ask Claude to set it up. Or run, inside Claude Code:
 
 ```
-! jupyter-live-setup --create --root ~/projects
+! live-notebooks-setup --create --root ~/projects
 ```
 
 then `/mcp` to reconnect the `jupyter` server. `--root` is the directory
@@ -72,7 +72,7 @@ of them, `brew install uv` is enough.
 To use an existing env instead, leave out `--create` and pass `--env PATH`:
 it needs `jupyterlab`, `jupyter-collaboration` and `jupyter-mcp-server`.
 
-`jupyter-live-setup --show` prints the current settings. They are stored in
+`live-notebooks-setup --show` prints the current settings. They are stored in
 `~/.jupyter_mcp/config` and can be overridden by environment variables of
 the same name: `JUPYTER_MCP_ENV`, `JUPYTER_ROOT`, `JUPYTER_PORT` (default
 8000 + uid % 1000), `JUPYTER_DEFAULT_KERNEL` and `WEBSOCKETS_MAX_BODY_SIZE`
@@ -116,7 +116,7 @@ interactive Slurm job, and handles that without extra setup:
   job lands on. The per-user port keeps users on the same node apart, and the
   server ends with your job.
 - Keep the env and caches off your home directory if it has a small quota:
-  `--env /data/<group>/<you>/envs/jupyter-live`.
+  `--env /data/<group>/<you>/envs/live-notebooks`.
 - Kernels count against your job's memory: check `jkernel list`.
 - To reach JupyterLab from your laptop:
   `ssh -L <port>:localhost:<port> <node>`, then open the URL above.
@@ -138,7 +138,7 @@ interactive Slurm job, and handles that without extra setup:
   local JupyterLab.
 - **Network.** JupyterLab, the MCP server and `jkernel` only talk to each
   other over `127.0.0.1`. There is no telemetry, and nothing is sent to any
-  other host. The one download is `jupyter-live-setup --create`, run by you
+  other host. The one download is `live-notebooks-setup --create`, run by you
   or by Claude with your OK, which installs the pinned packages from
   conda-forge or PyPI (and uv may download a Python build).
 - **Hooks.** At session start, a hook tells Claude the notebook root, or that
@@ -157,7 +157,7 @@ interactive Slurm job, and handles that without extra setup:
   notebook over the limit (e.g. with many embedded plots) silently opens as
   empty. Later releases raise an error instead
   ([datalayer/jupyter-nbmodel-client#67](https://github.com/datalayer/jupyter-nbmodel-client/pull/67)).
-  For bigger notebooks, raise it with `jupyter-live-setup --max-notebook-mb N`
+  For bigger notebooks, raise it with `live-notebooks-setup --max-notebook-mb N`
   and reconnect with `/mcp`.
 - If the first plot in a kernel shows up as `<Figure size … with 1 Axes>`
   instead of an image, run `%matplotlib inline` first (Claude does this
@@ -169,7 +169,7 @@ interactive Slurm job, and handles that without extra setup:
 
 ## Not affiliated with Project Jupyter
 
-Jupyter Live is an independent, free plugin that uses Jupyter software
+Live Notebooks for Jupyter is an independent, free plugin that uses Jupyter software
 (JupyterLab, and [jupyter-mcp-server](https://github.com/datalayer/jupyter-mcp-server)
 by Datalayer). It is not made, sponsored or endorsed by Project Jupyter.
 "Jupyter" is a trademark of LF Charities.

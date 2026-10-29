@@ -39,11 +39,11 @@ PY
 
 status=0; server_status || status=$?
 if (( status == 2 )); then
-    echo "jupyter-live: port $JUPYTER_PORT is in use by another server; set JUPYTER_PORT" >&2
+    echo "live-notebooks: port $JUPYTER_PORT is in use by another server; set JUPYTER_PORT" >&2
     exit 1
 elif (( status == 1 )); then
     mkdir -p "$JUPYTER_MCP_HOME"
-    echo "jupyter-live: starting Jupyter on $JUPYTER_URL (log: $LOG)" >&2
+    echo "live-notebooks: starting Jupyter on $JUPYTER_URL (log: $LOG)" >&2
     # New session via Python's os.setsid: macOS has no setsid command.
     nohup "$E/bin/python" -c 'import os, sys; os.setsid(); os.execv(sys.argv[1], sys.argv[1:])' \
         "$HERE/start-jupyter" >> "$LOG" 2>&1 < /dev/null &
@@ -53,7 +53,7 @@ elif (( status == 1 )); then
         (( status == 0 )) && break
     done
     if (( status != 0 )); then
-        echo "jupyter-live: Jupyter did not come up; see $LOG" >&2
+        echo "live-notebooks: Jupyter did not come up; see $LOG" >&2
         exit 1
     fi
 fi

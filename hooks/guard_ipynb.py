@@ -46,7 +46,7 @@ if target != root and root not in target.parents:
     sys.exit(0)
 
 reason = (
-    f"{event.get('tool_name')} on {path} is blocked by the jupyter-live plugin: "
+    f"{event.get('tool_name')} on {path} is blocked by the live-notebooks plugin: "
     "notebooks are live collaborative documents, so read, create, edit and run "
     "them with the jupyter MCP tools (use_notebook, read_notebook, read_cell, "
     "insert_cell, edit_cell_source, ...); paths there are relative to "

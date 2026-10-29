@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# One-time setup for the jupyter-live plugin: writes ~/.jupyter_mcp/config and
+# One-time setup for the live-notebooks plugin: writes ~/.jupyter_mcp/config and
 # creates the private token. Safe to re-run; options not given keep their
 # current value.
 #
-#   jupyter-live-setup --create [--with conda|uv|venv] [--env PREFIX] [--root DIR] [options]
-#   jupyter-live-setup --env PREFIX [--root DIR] [options]
-#   jupyter-live-setup --show
+#   live-notebooks-setup --create [--with conda|uv|venv] [--env PREFIX] [--root DIR] [options]
+#   live-notebooks-setup --env PREFIX [--root DIR] [options]
+#   live-notebooks-setup --show
 #
 #   --create              create the server env
 #   --with MANAGER        conda, uv, or venv (python3 >= 3.10); default: the first found
@@ -22,7 +22,7 @@ PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
 usage() { sed -n '2,17s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
 abspath() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
-die() { echo "jupyter-live-setup: $*" >&2; exit 1; }
+die() { echo "live-notebooks-setup: $*" >&2; exit 1; }
 
 # Build the server env at $1 with manager $2 (conda, uv or venv), or with the
 # first one found: conda/mamba (environment.yml), uv (fetches a Python if
@@ -96,7 +96,7 @@ if ! $show; then
         merged="$(printf '%s\nJUPYTER_MCP_ENV=%s' "$merged" "$env_prefix" | grep -E '^[A-Z_]+=' | sort)"
     fi
     if [[ -z $env_prefix ]]; then
-        echo "jupyter-live-setup: give --create, or --env with an existing server env" >&2
+        echo "live-notebooks-setup: give --create, or --env with an existing server env" >&2
         usage 1
     fi
     if $create; then
@@ -105,7 +105,7 @@ if ! $show; then
         die "--with only applies with --create"
     fi
     if [[ ! -x $env_prefix/bin/jupyter-mcp-server || ! -x $env_prefix/bin/jupyter-lab ]]; then
-        echo "jupyter-live-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2
+        echo "live-notebooks-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2
         exit 1
     fi
 

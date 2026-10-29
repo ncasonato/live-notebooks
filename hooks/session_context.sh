@@ -4,7 +4,7 @@
 . "$(dirname "${BASH_SOURCE[0]}")/../scripts/common.sh"
 load_config
 if [[ -n ${JUPYTER_MCP_ENV:-} && -x $JUPYTER_MCP_ENV/bin/jupyter-mcp-server && -s $JUPYTER_MCP_TOKEN_FILE ]]; then
-    echo "jupyter-live: Jupyter notebook paths in the jupyter MCP tools are relative to $JUPYTER_ROOT. Work on notebooks through those tools only (see the jupyter-notebooks skill)."
+    echo "live-notebooks: Jupyter notebook paths in the jupyter MCP tools are relative to $JUPYTER_ROOT. Work on notebooks through those tools only (see the jupyter-notebooks skill)."
     exit 0
 fi
 
@@ -16,11 +16,11 @@ py=$(python_310)
 [[ -n $py ]] && found+="  - venv from $(command -v "$py") (--with venv)"$'\n'
 
 cat <<EOF
-The jupyter-live plugin is installed but not set up, so its jupyter MCP server
+The live-notebooks plugin is installed but not set up, so its jupyter MCP server
 will fail to start. If the user wants to work with notebooks, offer to run
 setup for them:
 
-    jupyter-live-setup --create --with <manager> --root /path/to/notebooks
+    live-notebooks-setup --create --with <manager> --root /path/to/notebooks
 
 - --root is the folder their notebooks live under (often the current
   project); confirm it with the user and pass a real absolute path, never a

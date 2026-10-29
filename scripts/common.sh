@@ -1,5 +1,5 @@
 # Sourced by the plugin's scripts. Settings come from ~/.jupyter_mcp/config
-# (KEY=VALUE lines, written by jupyter-live-setup); an environment variable of
+# (KEY=VALUE lines, written by live-notebooks-setup); an environment variable of
 # the same name overrides the file.
 #
 #   JUPYTER_MCP_ENV         conda env with jupyterlab + jupyter-mcp-server (required)
@@ -55,7 +55,7 @@ require_setup() {
         why="no token in $JUPYTER_MCP_TOKEN_FILE"
     fi
     if [[ -n $why ]]; then
-        echo "jupyter-live: $why; run jupyter-live-setup (see the plugin README)" >&2
+        echo "live-notebooks: $why; run live-notebooks-setup (see the plugin README)" >&2
         exit 1
     fi
 }

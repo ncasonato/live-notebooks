@@ -1,5 +1,5 @@
 {
-  "description": "jupyter-live: keep notebook access on the MCP server, and tell Claude where notebooks live",
+  "description": "live-notebooks: keep notebook access on the MCP server, and tell Claude where notebooks live",
   "hooks": {
     "PreToolUse": [
       {

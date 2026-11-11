@@ -6,8 +6,8 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
-  - jupyterlab=4.6.4
+  - jupyterlab=4.6.6
   - jupyter-collaboration=5.0.4
   - pip
   - pip:
-      - jupyter-mcp-server==2.2.4
+      - jupyter-mcp-server==2.2.5

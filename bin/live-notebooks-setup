@@ -5,12 +5,15 @@
 #
 #   live-notebooks-setup --create [--with conda|uv|venv] [--env PREFIX] [--root DIR] [options]
 #   live-notebooks-setup --env PREFIX [--root DIR] [options]
+#   live-notebooks-setup --sync
 #   live-notebooks-setup --show
 #   live-notebooks-setup --link [DIR]
 #
 #   --link [DIR]          write launchers for jkernel and live-notebooks-setup in DIR (default
 #                         ~/.local/bin), so they work outside Claude Code too
 #   --create              create the server env
+#   --sync                install the versions this plugin release pins into the existing
+#                         server env (after a plugin update raised them)
 #   --with MANAGER        conda, uv, or venv (python3 >= 3.10); default: the first found
 #   --env PREFIX          the server env: runs JupyterLab + jupyter-mcp-server, not your
 #                         analysis (that runs in kernels). Default with --create: ~/.jupyter_mcp/env
@@ -24,7 +27,7 @@ PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 . "$PLUGIN/scripts/common.sh"
 require_unix
 
-usage() { sed -n '2,20s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
+usage() { sed -n '2,23s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; exit "${1:-0}"; }
 abspath() { case $1 in /*) echo "$1" ;; *) echo "$PWD/$1" ;; esac; }
 die() { echo "live-notebooks-setup: $*" >&2; exit 1; }
 
@@ -110,9 +113,50 @@ create_env() {
     esac
 }
 
+# Bring the existing server env $1 to the versions in requirements.txt, with
+# the tool that installed it. In a conda env only the packages that differ
+# change: each through conda if conda installed it, else pip. A whole
+# environment.yml update could also move the env's Python.
+sync_env() {
+    local prefix=$1 drift line name want conda
+    drift=$(pin_drift "$prefix")
+    if [[ -z $drift ]]; then
+        echo "$prefix already has the pinned versions"
+        return
+    fi
+    printf 'updating %s (installed -> pinned):\n' "$prefix"
+    printf '%s\n' "$drift" | sed 's/^/  /'
+    if [[ -d $prefix/conda-meta ]]; then
+        conda=$(conda_exe)
+        [[ -n $conda ]] || die "$prefix is a conda env but no conda/mamba was found"
+        local conda_specs="" pip_specs=""
+        while read -r name _ _ want; do
+            if ls "$prefix/conda-meta/$name-"[0-9]*.json > /dev/null 2>&1; then
+                conda_specs+=" $name=$want"
+            else
+                pip_specs+=" $name==$want"
+            fi
+        done <<< "$drift"
+        # Word splitting of the spec lists is intended.
+        if [[ -n $conda_specs ]]; then
+            "$conda" install -y -p "$prefix" -c conda-forge $conda_specs
+        fi
+        if [[ -n $pip_specs ]]; then
+            "$prefix/bin/python" -m pip install $pip_specs
+        fi
+    elif grep -q '^uv *=' "$prefix/pyvenv.cfg" 2> /dev/null; then
+        command -v uv > /dev/null || die "$prefix was made by uv, but no uv was found"
+        uv pip install --python "$prefix/bin/python" -r "$PLUGIN/requirements.txt"
+    else
+        "$prefix/bin/python" -m pip install -r "$PLUGIN/requirements.txt"
+    fi
+    drift=$(pin_drift "$prefix")
+    [[ -z $drift ]] || die "still differs from the pins after the update:"$'\n'"$drift"
+}
+
 # Settings given on the command line, as KEY=VALUE lines.
 new=""
-create=false show=false manager=""
+create=false sync=false show=false manager=""
 while (( $# )); do
     case $1 in
         --with)
@@ -131,6 +175,7 @@ while (( $# )); do
             link_commands "$dir"
             exit 0 ;;
         --create) create=true ;;
+        --sync) sync=true ;;
         --show) show=true ;;
         -h|--help) usage ;;
         *) echo "unknown option: $1" >&2; usage 1 ;;
@@ -155,6 +200,9 @@ if ! $show; then
         echo "live-notebooks-setup: give --create, or --env with an existing server env" >&2
         usage 1
     fi
+    if $create && $sync; then
+        die "--sync updates an existing env; --create already installs the pinned versions"
+    fi
     if $create; then
         create_env "$env_prefix" "$manager"
     elif [[ -n $manager ]]; then
@@ -163,6 +211,12 @@ if ! $show; then
     if [[ ! -x $env_prefix/bin/jupyter-mcp-server || ! -x $env_prefix/bin/jupyter-lab ]]; then
         echo "live-notebooks-setup: $env_prefix lacks jupyterlab or jupyter-mcp-server (see the README)" >&2
         exit 1
+    fi
+    if $sync; then
+        sync_env "$env_prefix"
+        # A server already running from this env keeps the old packages loaded.
+        running=$(our_server "$( (load_config; echo "$JUPYTER_PORT") )")
+        [[ $running == *" $env_prefix/"* ]] && running=${running%% *} || running=""
     fi
 
     # Settings a running server was started with; changing them needs a restart.
@@ -190,7 +244,7 @@ echo "  JUPYTER_PORT           $JUPYTER_PORT"
 echo "  JUPYTER_DEFAULT_KERNEL $JUPYTER_DEFAULT_KERNEL"
 echo "  WEBSOCKETS_MAX_BODY_SIZE $WEBSOCKETS_MAX_BODY_SIZE ($(( WEBSOCKETS_MAX_BODY_SIZE / 1024 / 1024 )) MB)"
 if [[ -n ${running:-} ]]; then
-    echo "Done. Your Jupyter server (PID $running) still runs with the old settings:" \
+    echo "Done. Your Jupyter server (PID $running) still runs with the old settings or packages:" \
         "stop it with 'kill $running' (this also ends its kernels), then reconnect" \
         "with /mcp or restart Claude Code."
 elif ! $show; then

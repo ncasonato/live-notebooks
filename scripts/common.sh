@@ -53,6 +53,34 @@ our_server() {
         | grep "[j]upyter-lab .*--port $1 --port-retries 0" | sed 's/^ *//' | head -1 || true
 }
 
+# Packages in the server env $1 that differ from the plugin's pins in
+# requirements.txt, one "name installed -> pinned" line each ("missing" if not
+# installed). Prints nothing when all match. Reads dist-info folder names
+# rather than starting Python, so the SessionStart hook stays fast.
+pin_drift() {
+    local env=$1 reqs dir sp="" installed line name want norm have
+    reqs="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/requirements.txt"
+    # conda also makes lib/python3.1 as a symlink to lib/python3.1x; skip it.
+    for dir in "$env"/lib/python3.*/site-packages; do
+        [[ -d $dir && ! -L ${dir%/site-packages} ]] && { sp=$dir; break; }
+    done
+    [[ -n $sp && -f $reqs ]] || return 0
+    # "name-version" per installed package, from the dist-info folder names.
+    installed=$(cd "$sp" && ls -d *.dist-info 2> /dev/null | sed 's/\.dist-info$//' || true)
+    while IFS= read -r line; do
+        line=${line%%#*}; line=${line//[[:space:]]/}
+        [[ $line == *==* ]] || continue
+        name=${line%%==*} want=${line#*==}
+        # Names compare normalized: lowercase, runs of -_. become _.
+        norm=$(printf '%s' "$name" | tr 'A-Z' 'a-z' | sed 's/[-_.][-_.]*/_/g')
+        have=$(printf '%s\n' "$installed" | awk -v n="$norm" '{
+            v = $0; sub(/.*-/, "", v); k = $0; sub(/-[^-]*$/, "", k)
+            k = tolower(k); gsub(/[-_.]+/, "_", k)
+            if (k == n) { print v; exit } }')
+        [[ $have == "$want" ]] || echo "$name ${have:-missing} -> $want"
+    done < "$reqs"
+}
+
 # Native Windows (Git Bash, MSYS, Cygwin) lacks what the scripts rely on, from
 # POSIX sessions to bin/ env layouts; WSL is Linux and works.
 require_unix() {

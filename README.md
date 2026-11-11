@@ -58,6 +58,13 @@ claude plugin update live-notebooks@ncasonato
 
 then restart Claude Code or run `/reload-plugins`.
 
+That updates the plugin, not the server env built at setup. When a release
+pins newer JupyterLab or jupyter-mcp-server versions, Claude says so at the
+start of a session and offers to run `live-notebooks-setup --sync`, which
+installs them into the env. A Jupyter server already running keeps the old
+ones until you stop it (`kill <pid>`; setup prints it), which ends its
+kernels, and reconnect from `/mcp`.
+
 If you installed it under its earlier names (`jupyter-hpc` or
 `jupyter-live`), the marketplace update moves your settings to
 `live-notebooks`. If the plugin then shows as not installed, run

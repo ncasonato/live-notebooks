@@ -5,6 +5,21 @@
 load_config
 if [[ -n ${JUPYTER_MCP_ENV:-} && -x $JUPYTER_MCP_ENV/bin/jupyter-mcp-server && -s $JUPYTER_MCP_TOKEN_FILE ]]; then
     echo "live-notebooks: Jupyter notebook paths in the jupyter MCP tools are relative to $JUPYTER_ROOT. Work on notebooks through those tools only (see the jupyter-notebooks skill)."
+    # A plugin update can raise the pins; the env only gets them at --create.
+    drift=$(pin_drift "$JUPYTER_MCP_ENV")
+    if [[ -n $drift ]]; then
+        cat <<EOF
+
+live-notebooks: the server env $JUPYTER_MCP_ENV doesn't match the versions
+this plugin release pins (installed -> pinned):
+$(printf '%s\n' "$drift" | sed 's/^/  /')
+Tell the user once, briefly, and offer to run \`live-notebooks-setup --sync\`,
+which installs the pinned versions into that env. The new versions take
+effect only after their Jupyter server is restarted (setup says how), which
+ends its running kernels, so let them pick the moment. If they keep other
+versions on purpose, drop it.
+EOF
+    fi
     exit 0
 fi
 

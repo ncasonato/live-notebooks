@@ -10,4 +10,4 @@ dependencies:
   - jupyter-collaboration=5.0.4
   - pip
   - pip:
-      - jupyter-mcp-server==2.2.5
+      - jupyter-mcp-server==2.2.6

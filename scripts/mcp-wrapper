@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Launch jupyter-mcp-server with the Jupyter token taken from a private file,
-# so it never appears in .mcp.json or on any process command line.
+# so it never appears in the plugin's MCP config (plugin.json) or on any
+# process command line.
 #
 # If no Jupyter server of ours is running on this machine, start one first
 # (start-jupyter, detached so it outlives this MCP process).
